@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Voice AI agent for customer calls · Demo</title>
+<meta name="description" content="An AI agent that answers customer calls and looks up the answer in the business system. Demo with sample data.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Voice AI agent for customer calls · Demo">
+<meta property="og:description" content="An AI agent that answers customer calls and looks up the answer in the business system. Demo with sample data.">
+<meta property="og:image" content="https://marwankhater.github.io/assets/og/voice.jpg">
+<meta property="og:url" content="https://marwankhater.github.io/demos/voice-agent/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23070B1E'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%235CF6E8'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../../index.html">Marwan Khater</a>
+  <nav class="nav"><a href="../../index.html#agents">AI agents</a><a href="../../index.html#erp">ERP systems</a><a href="../../index.html#open-source">Open source</a><a href="../../index.html#contact">Contact</a></nav>
+</div></header>
+<main class="wrap">
+<div class="demo-head">
+  <a class="back" href="../../index.html#agents">← All projects</a>
+  <div style="margin-top:14px"><span class="badge"><i></i>Demo · sample data</span></div>
+  <h1>Voice AI agent for customer calls</h1>
+  <p>The agent picks up customer calls, understands the request and answers from the business's own systems while the caller is on the line. Press "Start call" to watch a sample call.</p>
+  <p class="notice">Recreated demo with sample data. The production system runs for a client, so the real data stays private.</p>
+</div>
+<div class="stage">
+  <div class="phone"><div class="screen" style="background:linear-gradient(180deg,#11163A,#0A0E22)">
+    <div style="display:flex;flex-direction:column;align-items:center;padding:42px 14px 10px;color:#fff">
+      <div class="wa-bar" style="background:none;padding:0"><div class="av" style="width:76px;height:76px;font-size:22px;box-shadow:0 0 0 10px rgba(180,166,255,.12),0 0 0 22px rgba(180,166,255,.06)">AI</div></div>
+      <b style="margin-top:24px;font:600 17px var(--f-body)">Voice Agent</b>
+      <small id="callState" style="color:var(--a2);font:500 13px var(--f-body)">Ready</small>
+      <div id="wave" style="display:flex;align-items:center;gap:4px;height:38px;margin:14px 0 4px"></div>
+    </div>
+    <div class="chat" id="tr" style="background:none;padding:6px 12px 12px" aria-live="polite"></div>
+    <div style="padding:12px;display:flex;justify-content:center"><button class="btn primary" id="startCall" type="button">▶ Start call</button></div>
+  </div></div>
+  <div>
+    <div class="panel">
+      <h3><span class="live"></span>What the agent looks up</h3>
+      <p class="sub">Read from the business's system during the call. Sample data.</p>
+      <ul class="events" id="lookups"></ul><p class="empty" id="noLookups">Start the call to see it work.</p>
+    </div>
+    <div class="panel">
+      <h3>Call log</h3>
+      <div class="tbl"><table><thead><tr><th>Time</th><th>Caller</th><th>Topic</th><th>Result</th></tr></thead>
+      <tbody id="calls"><tr><td>10:14 AM</td><td>+20 1•• ••• 4821</td><td>Opening hours</td><td><span class="pill ok">Answered</span></td></tr>
+      <tr><td>10:32 AM</td><td>+20 1•• ••• 1907</td><td>New order</td><td><span class="pill ok">Order placed</span></td></tr></tbody></table></div>
+    </div>
+  </div>
+</div>
+</main>
+<footer class="site"><div class="wrap">
+  <span>Marwan Khater · AI Solutions Engineer · Cairo, Egypt</span>
+  <span class="links"><a href="https://www.linkedin.com/in/marwan-khater-811660219/">LinkedIn</a><a href="https://github.com/Marwankhater">GitHub</a><a href="mailto:marwanashraf410@gmail.com">Email</a><a href="https://wa.me/201202853088">WhatsApp</a></span>
+</div></footer>
+<script>
+const wave = document.getElementById('wave');
+for (let i = 0; i < 28; i++) { const s = document.createElement('span'); s.style.cssText = 'width:4px;border-radius:3px;background:linear-gradient(180deg,#B4A6FF,#5CF6E8);height:' + (8 + Math.round(24 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * .45)))) + 'px;transition:height .2s'; wave.append(s); }
+let anim = null;
+function animate(on) {
+  clearInterval(anim);
+  if (on) anim = setInterval(() => wave.querySelectorAll('span').forEach(s => s.style.height = (6 + Math.random() * 30) + 'px'), 180);
+}
+const lines = [
+  ['out', 'ألو، عايز أعرف الأوردر بتاعي وصل لفين؟', 'Caller'],
+  ['in', 'أهلاً بحضرتك. ممكن رقم الأوردر؟', 'AI agent'],
+  ['out', '1042', 'Caller', 'lookup'],
+  ['in', 'الأوردر خرج مع المندوب من 10 دقايق، وهيوصلك خلال ربع ساعة.', 'AI agent'],
+  ['out', 'تمام، شكراً', 'Caller'],
+  ['in', 'العفو، في خدمتك في أي وقت 🙏', 'AI agent', 'end'],
+];
+const tr = document.getElementById('tr'), btn = document.getElementById('startCall'), st = document.getElementById('callState');
+function bubble([k, txt, who]) {
+  const m = document.createElement('div'); m.className = 'm ' + k;
+  m.style.cssText = k === 'in' ? 'background:rgba(255,255,255,.1);color:#fff;box-shadow:none' : 'background:rgba(92,246,232,.16);color:#fff;box-shadow:none';
+  m.textContent = txt; const t = document.createElement('span'); t.className = 't'; t.style.color = 'rgba(255,255,255,.55)'; t.textContent = who; m.append(t);
+  tr.append(m); tr.scrollTop = tr.scrollHeight;
+}
+function effect(name) {
+  const now = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  if (name === 'lookup') {
+    document.getElementById('noLookups').hidden = true;
+    const li = document.createElement('li'); li.innerHTML = '<span class="when">' + now + '</span><b>Order #1042</b> <span class="pill ok">Out for delivery</span><div style="margin-top:6px;color:var(--muted)">Left the kitchen 10 min ago · ETA 15 min</div>';
+    document.getElementById('lookups').prepend(li);
+  }
+  if (name === 'end') {
+    const row = document.createElement('tr'); row.className = 'hl';
+    row.innerHTML = '<td>' + now + '</td><td>+20 1•• ••• 7730</td><td>Order status</td><td><span class="pill ok">Answered</span></td>';
+    document.getElementById('calls').prepend(row);
+  }
+}
+btn.addEventListener('click', async () => {
+  btn.disabled = true; tr.innerHTML = ''; document.getElementById('lookups').innerHTML = ''; document.getElementById('noLookups').hidden = false;
+  st.textContent = 'Connecting…'; await new Promise(r => setTimeout(r, 700));
+  const start = Date.now(); const timer = setInterval(() => { const s = Math.floor((Date.now() - start) / 1000); st.textContent = 'On call · 0' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 500);
+  animate(true);
+  for (const l of lines) { await new Promise(r => setTimeout(r, l[0] === 'in' ? 1500 : 1100)); bubble(l); if (l[3]) effect(l[3]); }
+  await new Promise(r => setTimeout(r, 900)); clearInterval(timer); animate(false); st.textContent = 'Call ended';
+  btn.disabled = false; btn.textContent = '↻ Play again';
+});
+</script>
+</body>
+</html>

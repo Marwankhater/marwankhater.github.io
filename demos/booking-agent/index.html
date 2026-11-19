@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WhatsApp booking agent · Demo</title>
+<meta name="description" content="An AI agent that books customers on WhatsApp and creates the booking in the ERP. Interactive demo with sample data.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="WhatsApp booking agent · Demo">
+<meta property="og:description" content="An AI agent that books customers on WhatsApp and creates the booking in the ERP. Interactive demo with sample data.">
+<meta property="og:image" content="https://marwankhater.github.io/assets/og/booking.jpg">
+<meta property="og:url" content="https://marwankhater.github.io/demos/booking-agent/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23070B1E'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%235CF6E8'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../../index.html">Marwan Khater</a>
+  <nav class="nav"><a href="../../index.html#agents">AI agents</a><a href="../../index.html#erp">ERP systems</a><a href="../../index.html#open-source">Open source</a><a href="../../index.html#contact">Contact</a></nav>
+</div></header>
+<main class="wrap">
+<div class="demo-head">
+  <a class="back" href="../../index.html#agents">← All projects</a>
+  <div style="margin-top:14px"><span class="badge"><i></i>Demo · sample data</span></div>
+  <h1>WhatsApp booking agent, connected to the ERP</h1>
+  <p>The agent answers customers, offers the free slots and confirms the booking in the same chat. The booking is created in the ERP with no typing. Try booking a slot.</p>
+  <p class="notice">Recreated demo with sample data. The production system runs for a client, so the real data stays private.</p>
+</div>
+<div class="stage">
+  <div class="phone" id="phone"><div class="screen">
+    <div class="wa-bar"><div class="av">AI</div><div><b>Booking Assistant</b><small>AI agent · online</small></div></div>
+    <div class="chat" aria-live="polite"></div>
+    <div class="chips" hidden></div>
+    <form class="input"><input id="msg" aria-label="Type a message" placeholder="اكتب رسالة…" autocomplete="off"><button aria-label="Send">➤</button></form>
+  </div></div>
+  <div>
+    <div class="panel">
+      <h3><span class="live"></span>ERP · Bookings</h3>
+      <p class="sub">Thursday's schedule. Sample data.</p>
+      <div class="kpis">
+        <div class="kpi"><span>Bookings this week</span><b id="kWeek">41</b></div>
+        <div class="kpi"><span>Booked by the agent</span><b id="kAgent">29</b></div>
+      </div>
+      <div class="tbl"><table>
+        <thead><tr><th>Ref</th><th>Time</th><th>Customer</th><th>Source</th><th>Status</th></tr></thead>
+        <tbody id="rows">
+          <tr><td>BK-2376</td><td>Thu 12:00</td><td>Customer A</td><td>WhatsApp agent</td><td><span class="pill ok">Confirmed</span></td></tr>
+          <tr><td>BK-2378</td><td>Thu 2:30</td><td>Customer B</td><td>Phone</td><td><span class="pill ok">Confirmed</span></td></tr>
+          <tr><td>BK-2380</td><td>Thu 3:00</td><td>Customer C</td><td>WhatsApp agent</td><td><span class="pill ok">Confirmed</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="panel"><h3>Activity</h3><ul class="events" id="log"></ul><p class="empty" id="noLog">Nothing yet.</p></div>
+  </div>
+</div>
+</main>
+<footer class="site"><div class="wrap">
+  <span>Marwan Khater · AI Solutions Engineer · Cairo, Egypt</span>
+  <span class="links"><a href="https://www.linkedin.com/in/marwan-khater-811660219/">LinkedIn</a><a href="https://github.com/Marwankhater">GitHub</a><a href="mailto:marwanashraf410@gmail.com">Email</a><a href="https://wa.me/201202853088">WhatsApp</a></span>
+</div></footer>
+<script src="../../assets/chat.js"></script>
+<script>
+
+let booked = false;
+function log(text) {
+  document.getElementById('noLog').hidden = true;
+  const li = document.createElement('li');
+  const t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  li.innerHTML = '<span class="when">' + t + '</span>'; li.append(text);
+  document.getElementById('log').prepend(li);
+}
+function fx(name) {
+  if (name.startsWith('book:') && !booked) {
+    booked = true;
+    const time = name.slice(5);
+    const tr = document.createElement('tr'); tr.className = 'hl';
+    tr.innerHTML = '<td>BK-2381</td><td>Thu ' + time + '</td><td>New customer</td><td>WhatsApp agent</td><td><span class="pill ok">Confirmed</span></td>';
+    document.getElementById('rows').append(tr);
+    document.getElementById('kWeek').textContent = '42'; document.getElementById('kAgent').textContent = '30';
+    log('Booking BK-2381 created in the ERP from WhatsApp');
+  }
+  if (name === 'reminder') log('Reminder scheduled 1 hour before BK-2381');
+}
+mountChat(document.getElementById('phone'), {
+  day: 'Today',
+  intro: [{ text: 'أهلاً بيك 👋 تحب تحجز ميعاد؟', delay: 700 }],
+  start: ['ask', 'duration'],
+  flows: {
+    duration: { user: 'الميعاد بياخد قد إيه؟', next: ['ask'],
+      replies: [{ text: 'حوالي 45 دقيقة.' }] },
+    ask: { user: 'عايز أحجز يوم الخميس بعد العصر', next: ['s530', 's700'],
+      replies: [{ text: 'متاح يوم الخميس: 4:00 أو 5:30 أو 7:00. تحب أنهي ميعاد؟' }] },
+    s530: { user: '5:30', next: ['reminder'],
+      replies: [{ text: 'تمام ✅ حجزتلك الخميس الساعة 5:30، رقم الحجز BK-2381.', effect: 'book:5:30' }] },
+    s700: { user: '7:00', next: ['reminder'],
+      replies: [{ text: 'تمام ✅ حجزتلك الخميس الساعة 7:00، رقم الحجز BK-2381.', effect: 'book:7:00' }] },
+    reminder: { user: 'ابعتلي تذكير قبلها', next: ['ask'],
+      replies: [{ text: 'أكيد، هبعتلك تذكير هنا قبل الميعاد بساعة 🔔', effect: 'reminder' }] },
+  },
+  keywords: [
+    { re: /5[:.]?30|خمسة ونص/, flow: 's530' },
+    { re: /7|سبعة/, flow: 's700' },
+    { re: /تذكير|فكرني|reminder/i, flow: 'reminder' },
+    { re: /قد إيه|مدة|وقت/i, flow: 'duration' },
+    { re: /احجز|أحجز|حجز|ميعاد|book/i, flow: 'ask' },
+  ],
+  fallback: 'ده ديمو ببيانات مثال، فبيفهم الحجز بس. جرّب من الاقتراحات 👇',
+  onEffect: fx,
+});
+</script>
+</body>
+</html>

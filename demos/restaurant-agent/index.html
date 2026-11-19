@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI ordering agent for a restaurant · Demo</title>
+<meta name="description" content="Customers order on WhatsApp in plain Arabic and the order goes straight to the kitchen. Interactive demo with sample data.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="AI ordering agent for a restaurant · Demo">
+<meta property="og:description" content="Customers order on WhatsApp in plain Arabic and the order goes straight to the kitchen. Interactive demo with sample data.">
+<meta property="og:image" content="https://marwankhater.github.io/assets/og/restaurant.jpg">
+<meta property="og:url" content="https://marwankhater.github.io/demos/restaurant-agent/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23070B1E'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%235CF6E8'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../../index.html">Marwan Khater</a>
+  <nav class="nav"><a href="../../index.html#agents">AI agents</a><a href="../../index.html#erp">ERP systems</a><a href="../../index.html#open-source">Open source</a><a href="../../index.html#contact">Contact</a></nav>
+</div></header>
+<main class="wrap">
+<div class="demo-head">
+  <a class="back" href="../../index.html#agents">← All projects</a>
+  <div style="margin-top:14px"><span class="badge"><i></i>Demo · sample data</span></div>
+  <h1>AI ordering agent for a restaurant</h1>
+  <p>Customers order on WhatsApp in plain Arabic. The agent confirms the items, total and address, then sends the order straight to the kitchen screen. Try placing an order.</p>
+  <p class="notice">Recreated demo with sample data. The production system runs for a client, so the real data stays private.</p>
+</div>
+<div class="stage">
+  <div class="phone" id="phone"><div class="screen">
+    <div class="wa-bar"><div class="av">AI</div><div><b>Order Assistant</b><small>AI agent · online</small></div></div>
+    <div class="chat" aria-live="polite"></div>
+    <div class="chips" hidden></div>
+    <form class="input"><input id="msg" aria-label="Type a message" placeholder="اكتب رسالة…" autocomplete="off"><button aria-label="Send">➤</button></form>
+  </div></div>
+  <div>
+    <div class="panel">
+      <h3><span class="live"></span>Kitchen screen</h3>
+      <p class="sub">Orders appear here the moment the customer confirms.</p>
+      <ul class="events" id="tickets"></ul>
+      <p class="empty" id="noTickets">No orders yet. Place one in the chat.</p>
+    </div>
+    <div class="panel">
+      <h3>Menu (sample)</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Item</th><th>Price</th></tr></thead>
+        <tbody>
+          <tr><td>Chicken shawarma</td><td>EGP 85</td></tr>
+          <tr><td>Beef shawarma</td><td>EGP 110</td></tr>
+          <tr><td>Large fries</td><td>EGP 45</td></tr>
+          <tr><td>Pepsi</td><td>EGP 20</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+</main>
+<footer class="site"><div class="wrap">
+  <span>Marwan Khater · AI Solutions Engineer · Cairo, Egypt</span>
+  <span class="links"><a href="https://www.linkedin.com/in/marwan-khater-811660219/">LinkedIn</a><a href="https://github.com/Marwankhater">GitHub</a><a href="mailto:marwanashraf410@gmail.com">Email</a><a href="https://wa.me/201202853088">WhatsApp</a></span>
+</div></footer>
+<script src="../../assets/chat.js"></script>
+<script>
+
+let items = [];
+function fx(name) {
+  if (name === 'new') items = ['2× Chicken shawarma', '1× Large fries'];
+  if (name === 'pepsi') items.push('1× Pepsi');
+  if (name === 'ticket') {
+    document.getElementById('noTickets').hidden = true;
+    const li = document.createElement('li'); li.id = 't1042';
+    const t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    li.innerHTML = '<span class="when">' + t + '</span><b>Order #1042</b> <span class="pill warn" id="st">New</span><div style="margin-top:6px;color:var(--muted)"></div>';
+    li.querySelector('div').textContent = items.join(' · ') + ' · Delivery';
+    document.getElementById('tickets').prepend(li);
+  }
+  if (name === 'cooking') { const s = document.getElementById('st'); if (s) { s.textContent = 'Cooking'; s.className = 'pill ok'; } }
+}
+mountChat(document.getElementById('phone'), {
+  day: 'Today',
+  intro: [{ text: 'أهلاً بيك 👋 تحب تطلب إيه النهارده؟', delay: 700 }],
+  start: ['order', 'menu', 'hours'],
+  flows: {
+    menu: { user: 'إيه المنيو؟', next: ['order', 'hours'],
+      replies: [{ text: 'عندنا:\n• شاورما فراخ: 85 ج\n• شاورما لحمة: 110 ج\n• بطاطس كبيرة: 45 ج\n• بيبسي: 20 ج' }] },
+    hours: { user: 'بتقفلوا إمتى؟', next: ['order', 'menu'],
+      replies: [{ text: 'مفتوحين كل يوم من 12 الظهر لحد 2 بالليل.' }] },
+    order: { user: 'عايز 2 شاورما فراخ وبطاطس كبيرة', next: ['confirm', 'pepsi'], effect: 'new',
+      replies: [{ text: 'تمام 👌\n2 شاورما فراخ: 170 ج\nبطاطس كبيرة: 45 ج\nالإجمالي 215 ج. أبعته على عنوانك المسجل؟' }] },
+    pepsi: { user: 'زوّد بيبسي', next: ['confirm'], effect: 'pepsi',
+      replies: [{ text: 'اتزوّد بيبسي (20 ج). الإجمالي بقى 235 ج. أأكد الأوردر؟' }] },
+    confirm: { user: 'أيوه، أكّد', next: ['status'],
+      replies: [{ text: '✅ الأوردر #1042 اتبعت للمطبخ، وهيوصلك خلال 35 دقيقة.', effect: 'ticket' }] },
+    status: { user: 'الأوردر وصل لفين؟', next: ['order'],
+      replies: [{ text: 'الأوردر بيتجهز في المطبخ دلوقتي، وهيخرج مع المندوب خلال 15 دقيقة.', effect: 'cooking' }] },
+  },
+  keywords: [
+    { re: /منيو|menu|أسعار/i, flow: 'menu' },
+    { re: /تقفل|مفتوح|مواعيد/i, flow: 'hours' },
+    { re: /بيبسي|pepsi/i, flow: 'pepsi' },
+    { re: /أكد|اكد|تمام|أيوه|ايوه|confirm/i, flow: 'confirm' },
+    { re: /فين|وصل|status/i, flow: 'status' },
+    { re: /عايز|اطلب|أطلب|شاورما|order/i, flow: 'order' },
+  ],
+  fallback: 'ده ديمو ببيانات مثال، فبيفهم أوردرات المنيو اللي جنبك بس. جرّب من الاقتراحات 👇',
+  onEffect: fx,
+});
+</script>
+</body>
+</html>

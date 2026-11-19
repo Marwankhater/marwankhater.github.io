@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WhatsApp AI agent for management · Demo</title>
+<meta name="description" content="Management asks about any figure on WhatsApp and gets a live answer from the ERP. Interactive demo with sample data.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="WhatsApp AI agent for management · Demo">
+<meta property="og:description" content="Management asks about any figure on WhatsApp and gets a live answer from the ERP. Interactive demo with sample data.">
+<meta property="og:image" content="https://marwankhater.github.io/assets/og/mgmt.jpg">
+<meta property="og:url" content="https://marwankhater.github.io/demos/management-agent/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23070B1E'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%235CF6E8'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../../index.html">Marwan Khater</a>
+  <nav class="nav"><a href="../../index.html#agents">AI agents</a><a href="../../index.html#erp">ERP systems</a><a href="../../index.html#open-source">Open source</a><a href="../../index.html#contact">Contact</a></nav>
+</div></header>
+<main class="wrap">
+<div class="demo-head">
+  <a class="back" href="../../index.html#agents">← All projects</a>
+  <div style="margin-top:14px"><span class="badge"><i></i>Demo · sample data</span></div>
+  <h1>WhatsApp AI agent for management</h1>
+  <p>Management asks about any figure on WhatsApp and gets an answer read live from the ERP. They also get a morning summary and an alert as soon as something looks off. Try it: tap a question or type your own.</p>
+  <p class="notice">Recreated demo with sample data. The production system runs for a client, so the real data stays private.</p>
+</div>
+<div class="stage">
+  <div class="phone" id="phone"><div class="screen">
+    <div class="wa-bar"><div class="av">AI</div><div><b>Ops Assistant</b><small>AI agent · connected to the ERP</small></div></div>
+    <div class="chat" aria-live="polite"></div>
+    <div class="chips" hidden></div>
+    <form class="input"><input id="msg" aria-label="Type a message" placeholder="اكتب رسالة…" autocomplete="off"><button aria-label="Send">➤</button></form>
+  </div></div>
+  <div>
+    <div class="panel">
+      <h3><span class="live"></span>ERP · live figures</h3>
+      <p class="sub">What the agent reads when it answers. Sample data.</p>
+      <div class="kpis">
+        <div class="kpi" id="k-sales"><span>Sales yesterday</span><b>EGP 1.24M</b><small class="up">+6% vs weekly avg</small></div>
+        <div class="kpi" id="k-att"><span>Attendance today</span><b>96%</b><small class="down">7 absent</small></div>
+        <div class="kpi" id="k-target"><span>Branches above target</span><b>3 of 6</b><small class="up">yesterday</small></div>
+      </div>
+      <div class="tbl"><table>
+        <thead><tr><th>Branch</th><th>Today so far</th><th>vs average</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr id="b1"><td>Branch 1</td><td>EGP 142,300</td><td class="up">+8%</td><td><span class="pill ok">On track</span></td></tr>
+          <tr id="b2"><td>Branch 2</td><td>EGP 118,900</td><td class="up">+2%</td><td><span class="pill warn" id="b2s">Returns high</span></td></tr>
+          <tr id="b3"><td>Branch 3</td><td>EGP 97,450</td><td class="up">+4%</td><td><span class="pill ok">On track</span></td></tr>
+          <tr id="b4"><td>Branch 4</td><td>EGP 86,400</td><td class="down">−12%</td><td><span class="pill bad">Below</span></td></tr>
+          <tr id="b5"><td>Branch 5</td><td>EGP 104,800</td><td class="up">+1%</td><td><span class="pill ok">On track</span></td></tr>
+          <tr id="b6"><td>Branch 6</td><td>EGP 91,200</td><td class="down">−3%</td><td><span class="pill ok">On track</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="panel">
+      <h3>Alerts sent today</h3>
+      <ul class="events" id="alerts"><li><span class="when">8:00 AM</span><b>Morning summary</b> sent to management</li></ul>
+    </div>
+  </div>
+</div>
+</main>
+<footer class="site"><div class="wrap">
+  <span>Marwan Khater · AI Solutions Engineer · Cairo, Egypt</span>
+  <span class="links"><a href="https://www.linkedin.com/in/marwan-khater-811660219/">LinkedIn</a><a href="https://github.com/Marwankhater">GitHub</a><a href="mailto:marwanashraf410@gmail.com">Email</a><a href="https://wa.me/201202853088">WhatsApp</a></span>
+</div></footer>
+<script src="../../assets/chat.js"></script>
+<script>
+
+function hl(ids) {
+  document.querySelectorAll('.hl').forEach(e => e.classList.remove('hl'));
+  ids.forEach(id => { const e = document.getElementById(id); if (e) { e.classList.add('hl'); e.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } });
+}
+function log(title, text) {
+  const li = document.createElement('li');
+  const t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  li.innerHTML = '<span class="when">' + t + '</span><b></b> ';
+  li.querySelector('b').textContent = title; li.append(text);
+  document.getElementById('alerts').prepend(li);
+}
+function fx(name) {
+  if (name === 'summary') hl(['k-sales', 'k-target']);
+  if (name === 'branch4') hl(['b4']);
+  if (name === 'attendance') hl(['k-att']);
+  if (name === 'alert') { hl(['b2']); log('Returns alert', 'Branch 2 · 3× the usual returns'); }
+  if (name === 'stock') { hl(['b4', 'b2', 'b6']); log('Low stock', '3 items below reorder level'); }
+}
+mountChat(document.getElementById('phone'), {
+  day: 'Today',
+  intro: [{ text: 'صباح الخير 👋 أنا مساعد العمليات. اسألني عن أي رقم في السيستم، أو اختار سؤال من تحت.', delay: 700 }],
+  start: ['summary', 'branch4', 'alerts', 'attendance'],
+  flows: {
+    summary: { user: 'ابعتلي ملخص امبارح', next: ['branch4', 'alerts', 'stock'],
+      replies: [{ text: 'ملخص امبارح:\n• المبيعات: 1.24 مليون جنيه (+6% عن متوسط الأسبوع)\n• 3 فروع من 6 فوق التارجت\n• نسبة الحضور: 95%', effect: 'summary' }] },
+    branch4: { user: 'فرع 4 عامل إيه النهارده؟', next: ['stock', 'alerts', 'attendance'],
+      replies: [{ text: 'فرع 4 لحد دلوقتي 86,400 جنيه، أقل من متوسطه بـ 12%. أغلب النقص في المشروبات، ومخزونها قرّب يخلص.', effect: 'branch4' }] },
+    alerts: { user: 'في أي تنبيهات النهارده؟', next: ['branch4', 'summary'],
+      replies: [{ text: '⚠️ مرتجعات فرع 2 النهارده 3 أضعاف المعتاد، أغلبها من كاشير واحد بعد الساعة 2. أبعتلك التفاصيل؟', alert: true, effect: 'alert' }] },
+    attendance: { user: 'مين غايب النهارده؟', next: ['summary', 'branch4'],
+      replies: [{ text: 'الحضور النهارده 96%. فيه 7 غياب: 3 في فرع 2، و2 في فرع 5، وواحد في فرع 1 وواحد في فرع 6. 4 منهم عندهم إجازة متسجلة.', effect: 'attendance' }] },
+    stock: { user: 'إيه الأصناف اللي قربت تخلص؟', next: ['alerts', 'summary'],
+      replies: [{ text: 'في 3 أصناف تحت حد الطلب:\n• مياه 1.5 لتر في فرع 4\n• زيت 1 لتر في فرع 2\n• سكر 1 كيلو في فرع 6\nأجهزلك طلب شراء ليهم؟', effect: 'stock' }] },
+  },
+  keywords: [
+    { re: /ملخص|امبارح|إمبارح|summary/i, flow: 'summary' },
+    { re: /فرع|branch/i, flow: 'branch4' },
+    { re: /تنبيه|مشكل|alert/i, flow: 'alerts' },
+    { re: /غياب|غايب|حضور|attendance/i, flow: 'attendance' },
+    { re: /مخزون|خلص|stock|نواقص/i, flow: 'stock' },
+  ],
+  fallback: 'ده ديمو ببيانات مثال، فبيفهم شوية أسئلة بس. جرّب سؤال من الاقتراحات 👇',
+  onEffect: fx,
+});
+</script>
+</body>
+</html>
