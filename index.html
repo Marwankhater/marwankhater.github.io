@@ -16,7 +16,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2310161F'/%3E%3Ctext x='16' y='21.5' font-family='Arial,sans-serif' font-size='13' font-weight='700' fill='%23C9A55F' text-anchor='middle'%3EMK%3C/text%3E%3C/svg%3E">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","@id":"https://marwankhater.github.io/#me","name":"Marwan Khater","alternateName":"مروان خاطر","url":"https://marwankhater.github.io/","image":"https://marwankhater.github.io/assets/img/marwan-440.webp","jobTitle":"Senior AI Solutions Engineer","worksFor":{"@type":"Organization","name":"AR-Corporates"},"address":{"@type":"PostalAddress","addressLocality":"Cairo","addressCountry":"EG"},"email":"mailto:marwanashraf410@gmail.com","alumniOf":{"@type":"CollegeOrUniversity","name":"Egyptian Russian University"},"knowsAbout":["AI agents","Large language models","Requirements analysis","Solution architecture","Odoo","ERP implementation","WhatsApp Business API","Voice AI","Python","PostgreSQL"],"sameAs":["https://www.linkedin.com/in/marwan-khater-811660219/","https://github.com/Marwankhater"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","@id":"https://marwankhater.github.io/#me","name":"Marwan Khater","alternateName":"مروان خاطر","url":"https://marwankhater.github.io/","image":"https://marwankhater.github.io/assets/img/marwan-440.webp","jobTitle":"AI Solutions Engineer","worksFor":{"@type":"Organization","name":"AR-Corporates"},"address":{"@type":"PostalAddress","addressLocality":"Cairo","addressCountry":"EG"},"email":"mailto:marwanashraf410@gmail.com","alumniOf":{"@type":"CollegeOrUniversity","name":"Egyptian Russian University"},"knowsAbout":["AI agents","Large language models","Requirements analysis","Solution architecture","Odoo","ERP implementation","WhatsApp Business API","Voice AI","Python","PostgreSQL"],"sameAs":["https://www.linkedin.com/in/marwan-khater-811660219/","https://github.com/Marwankhater"]}</script>
 <style>
   /* A recruiter-first page: name, title, summary and contact on the first screen, then proof, work with real screenshots,
      experience with dates, skills, open source, education. Deep blue-slate with one gold accent. System fonts. */
@@ -28,7 +28,7 @@
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
-  body { margin: 0; border-top: 3px solid var(--gold); background: var(--bg); color: var(--body); font: 400 16.5px/1.65 var(--sans); -webkit-font-smoothing: antialiased; }
+  body { margin: 0; border-top: 3px solid var(--gold); background: var(--bg); color: var(--body); font: 400 16px/1.65 var(--sans); -webkit-font-smoothing: antialiased; }
   h1, h2, h3, b, strong { color: var(--ink); }
   a { color: var(--gold); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--gold) 40%, transparent); text-underline-offset: 3px; }
   a:hover { text-decoration-color: currentColor; }
@@ -44,7 +44,7 @@
   .bar nav a { color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
   .bar .me { display: inline-flex; align-items: center; min-height: 44px; }
   .bar nav a:hover { color: var(--ink); }
-  .bar nav a.cv { color: var(--gold); font-weight: 600; border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); border-radius: 8px; padding: 0 14px; }
+  .bar nav a.cv { color: var(--ink); font-weight: 600; border: 1px solid #5E6876; border-radius: 8px; padding: 0 14px; }
   .bar nav a.cv:hover { border-color: var(--gold); }
 
   /* intro */
@@ -52,15 +52,19 @@
   .intro .face { grid-row: 1 / span 2; }
   .intro .links { grid-column: 2; }
   .face { display: block; width: 200px; height: 250px; object-fit: cover; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); background: var(--raise); }
-  h1 { margin: 0; font-size: clamp(36px, 5vw, 52px); line-height: 1.05; letter-spacing: -.03em; font-weight: 750; }
-  .role { margin: 10px 0 0; font-size: 21px; font-weight: 650; color: var(--gold); }
-  .where { margin: 4px 0 0; font-size: 15px; color: var(--muted); }
+  h1 { margin: 0; font-size: clamp(36px, 5vw, 52px); line-height: 1.05; letter-spacing: -.03em; font-weight: 700; }
+  .role { margin: 10px 0 0; font-size: 21px; font-weight: 600; color: var(--body); }
+  .nw { white-space: nowrap; }
+  .where { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
   .summary { margin: 20px 0 0; font-size: 18px; line-height: 1.6; color: var(--body); max-width: 38em; }
-  .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 9px 18px; border-radius: 8px; border: 1px solid var(--rule); color: var(--ink); font-weight: 600; font-size: 15.5px; text-decoration: none; background: transparent; }
+  .links { margin-top: 26px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .elsewhere { display: flex; flex-wrap: wrap; gap: 0 22px; margin: 8px 0 0; font-size: 16px; }
+  .elsewhere a { color: var(--body); display: inline-flex; align-items: center; min-height: 44px; }
+  .elsewhere a:hover { color: var(--ink); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 9px 18px; border-radius: 8px; border: 1px solid #5E6876; color: var(--ink); font-weight: 600; font-size: 16px; text-decoration: none; background: var(--raise); }
   .btn:hover { border-color: var(--gold); }
   .btn.main { background: var(--gold); border-color: var(--gold); color: var(--on-gold); }
-  .btn.demo { border-color: var(--gold); color: var(--gold-hi); }
   .btn.main:hover { background: var(--gold-hi); border-color: var(--gold-hi); }
   .btn svg { width: 17px; height: 17px; flex: none; }
 
@@ -68,26 +72,29 @@
   /* sections */
   .sec { padding: 72px 0 0; }
   .sec > .wrap { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 40px; }
-  h2 { margin: 0; font-size: 22px; letter-spacing: -.01em; font-weight: 700; }
+  h2 { margin: 0; font-size: clamp(22px, 1.2vw + 10px, 26px); letter-spacing: -.01em; font-weight: 700; }
   .body { min-width: 0; }
-  .lede { margin: 0 0 18px; color: var(--muted); }
-  h3 { margin: 0; font-size: 18px; line-height: 1.35; font-weight: 650; }
-  .meta { font-size: 14.5px; color: var(--muted); }
+  .lede { margin: 0 0 18px; color: var(--body); font-size: 16px; }
+  h3 { margin: 0; font-size: 18px; line-height: 1.35; font-weight: 600; }
+  .meta { font-size: 14px; color: var(--muted); }
 
   /* about */
-  .about p { margin: 0 0 14px; font-size: 17px; max-width: 40em; }
+  .about p { margin: 0 0 14px; font-size: 18px; max-width: 40em; }
   .points { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 28px; }
-  .points b { display: block; font-size: 16.5px; }
-  .points span { display: block; margin-top: 2px; font-size: 15.5px; color: var(--muted); }
+  .points b { display: block; font-size: 16px; }
+  .points span { display: block; margin-top: 2px; font-size: 16px; color: var(--body); }
 
   /* work */
   .case { padding: 22px 0; border-top: 1px solid var(--rule); }
   .case:last-child { border-bottom: 1px solid var(--rule); }
   .case .top { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 20px; flex-wrap: wrap; }
   .case p { margin: 6px 0 0; max-width: 42em; }
-  .nums { display: flex; flex-wrap: wrap; gap: 6px 26px; margin: 12px 0 0; padding: 0; list-style: none; font-size: 15px; }
+  .nums { display: flex; flex-wrap: wrap; gap: 6px 26px; margin: 12px 0 0; padding: 0; list-style: none; font-size: 16px; }
   .nums b { font-variant-numeric: tabular-nums; }
   .stack { margin: 8px 0 0; font-size: 14px; color: var(--muted); }
+  .stack a { display: inline-flex; align-items: center; min-height: 44px; font-size: 16px; font-weight: 600; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 20px; top: 8px; z-index: 20; background: var(--bg); padding: 10px 14px; border-radius: 8px; }
 
   /* demos with real screenshots */
   .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
@@ -100,40 +107,40 @@
   .shot { background: var(--shot); border-bottom: 1px solid var(--rule); aspect-ratio: 880 / 500; overflow: hidden; }
   .shot img { width: 100%; height: 100%; object-fit: cover; object-position: top left; }
   .card .txt { padding: 14px 16px 16px; }
-  .card h3 { font-size: 16.5px; }
-  .card p { margin: 4px 0 0; font-size: 15px; color: var(--muted); }
-  .card i { display: inline-block; margin-top: 10px; font-style: normal; font-weight: 600; font-size: 15px; color: var(--gold); }
+  .card h3 { font-size: 18px; }
+  .card p { margin: 4px 0 0; font-size: 16px; color: var(--body); }
+  .card i { display: inline-block; margin-top: 10px; font-style: normal; font-weight: 600; font-size: 16px; color: var(--gold); }
 
   /* experience */
   .jobs { list-style: none; margin: 0; padding: 0; }
   .job { padding: 20px 0; border-top: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 20px; }
   .job:last-child { border-bottom: 1px solid var(--rule); }
-  .job .when { font-size: 14.5px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .job .at { grid-column: 1 / -1; font-size: 15px; color: var(--muted); }
+  .job .when { font-size: 14px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .job .at { grid-column: 1 / -1; font-size: 14px; color: var(--muted); }
   .job ul { grid-column: 1 / -1; margin: 8px 0 0; padding-inline-start: 18px; }
   .job li { margin: 3px 0; }
 
   /* skills */
   dl.skills { margin: 0; display: grid; grid-template-columns: 180px minmax(0, 1fr); border-top: 1px solid var(--rule); }
   dl.skills dt, dl.skills dd { margin: 0; padding: 12px 0; border-bottom: 1px solid var(--rule); }
-  dl.skills dt { font-weight: 650; color: var(--ink); }
+  dl.skills dt { font-weight: 600; color: var(--ink); }
 
   /* open source */
   .repos { list-style: none; margin: 0; padding: 0; }
   .repos li { padding: 16px 0; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: baseline; gap: 4px 20px; flex-wrap: wrap; }
   .repos li:last-child { border-bottom: 1px solid var(--rule); }
   .repos li > div { flex: 1 1 420px; min-width: 0; }
-  .repos p { margin: 2px 0 0; font-size: 15.5px; color: var(--muted); }
-  .repos a.go { font-weight: 600; font-size: 15px; white-space: nowrap; display: inline-flex; align-items: center; min-height: 44px; }
+  .repos p { margin: 2px 0 0; font-size: 16px; color: var(--body); }
+  .repos a.go { font-weight: 600; font-size: 16px; white-space: nowrap; display: inline-flex; align-items: center; min-height: 44px; }
 
   /* contact */
   .contact { margin-top: 80px; background: var(--raise); border-top: 1px solid var(--rule); padding: 56px 0 40px; }
   .contact .wrap { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 40px; }
-  .contact .lead-in { margin: 0 0 18px; font-size: 17px; }
+  .contact .lead-in { margin: 0 0 18px; font-size: 18px; }
   .reach { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 640px; }
   .reach li { border: 1px solid var(--rule); border-radius: 12px; padding: 14px 16px; background: var(--bg); min-width: 0; }
-  .reach span { display: block; font-size: 13.5px; color: var(--muted); margin-bottom: 4px; }
-  .reach a { display: block; font-weight: 600; color: var(--ink); text-decoration: none; overflow-wrap: break-word; }
+  .reach span { display: block; font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+  .reach a { display: flex; align-items: center; min-height: 44px; font-weight: 600; color: var(--ink); text-decoration: none; overflow-wrap: break-word; }
   .reach a:hover { color: var(--gold); }
   .reach li:hover { border-color: color-mix(in srgb, var(--gold) 55%, transparent); }
   .contact .fine { grid-column: 1 / -1; margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
@@ -151,10 +158,10 @@
     .bar nav { gap: 16px; }
     .bar nav a.hide-s { display: none; }
     .intro { grid-template-columns: 1fr; gap: 20px; padding-block: 32px 32px; }
-    .intro .face { width: 120px; height: 150px; border-radius: 12px; }
+    .intro .face { width: 96px; height: 120px; border-radius: 12px; }
     .summary { font-size: 17px; }
-    .links .btn { flex: 1 1 140px; }
-    .links .btn.main, .links .btn.demo { flex-basis: 100%; }
+    .actions .btn { flex: 1 1 100%; }
+    .role { font-size: 18px; }
     .sec > .wrap, .contact .wrap { grid-template-columns: 1fr; gap: 16px; }
     .points { grid-template-columns: 1fr; }
     .reach { grid-template-columns: 1fr; }
@@ -169,35 +176,49 @@
   }
   @media print {
     :root { --bg: #fff; --raise: #fff; --ink: #111C27; --body: #2E3D4A; --muted: #5B6873; --rule: #DDE3E8; --gold: #7A5A1E; color-scheme: light; }
-    body { border-top: 0; } .bar { position: static; } .links, .cards { display: none; }
+    body { border-top: 0; } .bar { position: static; } .links, .cards, .skip { display: none; }
   }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .card { transition: none; } }
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 <header class="bar"><div class="wrap">
   <a class="me" href="./">Marwan Khater</a>
-  <nav aria-label="Sections"><a href="#work">Work</a><a href="#experience" class="hide-xs">Experience</a><a href="#skills" class="hide-s">Skills</a><a href="#contact" class="hide-s">Contact</a><a class="cv" href="assets/Marwan_Khater_CV.pdf" target="_blank" rel="noopener">CV</a></nav>
+  <nav aria-label="Sections"><a href="#demos">Demos</a><a href="#work" class="hide-xs">Work</a><a href="#experience" class="hide-s">Experience</a><a href="#skills" class="hide-s">Skills</a><a href="#contact" class="hide-s">Contact</a><a class="cv" href="assets/Marwan_Khater_CV.pdf" target="_blank" rel="noopener">CV</a></nav>
 </div></header>
 
-<main>
+<main id="main">
   <section class="wrap intro" aria-labelledby="h-name">
-    <img class="face" src="assets/img/marwan-440.webp" srcset="assets/img/marwan-260.webp 260w, assets/img/marwan-440.webp 440w" sizes="(max-width: 640px) 120px, (max-width: 860px) 160px, 200px" width="200" height="250" fetchpriority="high" decoding="async" alt="Marwan Khater">
+    <img class="face" src="assets/img/marwan-440.webp" srcset="assets/img/marwan-260.webp 260w, assets/img/marwan-440.webp 440w" sizes="(max-width: 640px) 96px, (max-width: 860px) 160px, 200px" width="200" height="250" fetchpriority="high" decoding="async" alt="Marwan Khater">
     <div>
       <h1 id="h-name">Marwan Khater</h1>
-      <p class="role">AI Solutions Engineer · AI Agents &amp; Odoo ERP</p>
+      <p class="role">AI Solutions Engineer · <span class="nw">AI agents and Odoo ERP</span></p>
       <p class="where">Cairo, Egypt. Open to relocation and remote work.</p>
       <p class="summary">I turn what a business needs into a clear technical spec, then build it with the client's team until it runs in production. Most of my work is AI agents that answer customers and managers on WhatsApp and phone calls from live ERP data, and the Odoo ERP systems behind them.</p>
     </div>
     <div class="links">
-        <a class="btn main" href="mailto:marwanashraf410@gmail.com">Email me</a>
-        <a class="btn demo" href="#demos">Try the live demos</a>
-        <a class="btn" href="https://www.linkedin.com/in/marwan-khater-811660219/" rel="noopener">LinkedIn</a>
-        <a class="btn" href="https://github.com/Marwankhater" rel="noopener">GitHub</a>
-        <a class="btn" href="https://wa.me/201202853088?text=Hi%20Marwan%2C%20I%20saw%20your%20portfolio%20and%20would%20like%20to%20talk." rel="noopener">WhatsApp</a>
-        <a class="btn" href="assets/Marwan_Khater_CV.pdf" target="_blank" rel="noopener">View CV</a>
+        <div class="actions">
+          <a class="btn main" href="mailto:marwanashraf410@gmail.com">Email me</a>
+          <a class="btn" href="#demos">Try the live demos</a>
+        </div>
+        <p class="elsewhere"><a href="https://www.linkedin.com/in/marwan-khater-811660219/" rel="noopener">LinkedIn</a><a href="https://github.com/Marwankhater" rel="noopener">GitHub</a><a href="https://wa.me/201202853088?text=Hi%20Marwan%2C%20I%20saw%20your%20portfolio%20and%20would%20like%20to%20talk." rel="noopener">WhatsApp</a><a href="assets/Marwan_Khater_CV.pdf" target="_blank" rel="noopener">View CV</a></p>
       </div>
   </section>
+
+  <section class="sec" id="demos" aria-labelledby="h-demos"><div class="wrap">
+    <h2 id="h-demos">Live demos</h2>
+    <div class="body">
+      <p class="lede">Rebuilt from systems running in production, with sample data. Each one explains how the real system works, and the chats carry an English line under every message.</p>
+      <div class="cards">
+        <a class="card wide" href="demos/supermarket-erp/"><div class="shot"><img src="assets/img/erp.webp" width="880" height="500" loading="lazy" decoding="async" alt="The general manager's morning brief: attendance by branch and the alerts behind it"></div><div class="txt"><h3>Supermarket chain ERP</h3><p>The morning brief, fingerprint attendance and Egyptian payroll.</p><i>Open demo</i></div></a>
+        <a class="card" href="demos/management-agent/"><div class="shot"><img src="assets/img/mgmt.webp" width="880" height="500" loading="lazy" decoding="async" alt="WhatsApp chat with the management agent next to live ERP figures by branch"></div><div class="txt"><h3>WhatsApp agent for management</h3><p>Ask about a branch and get the figure from the ERP.</p><i>Open demo</i></div></a>
+        <a class="card" href="demos/restaurant-agent/"><div class="shot"><img src="assets/img/restaurant.webp" width="880" height="500" loading="lazy" decoding="async" alt="A customer orders in Arabic on WhatsApp and the order appears on the kitchen screen"></div><div class="txt"><h3>Restaurant ordering agent</h3><p>Order in Arabic and watch it reach the kitchen screen.</p><i>Open demo</i></div></a>
+        <a class="card" href="demos/booking-agent/"><div class="shot"><img src="assets/img/booking.webp" width="880" height="500" loading="lazy" decoding="async" alt="A booking made on WhatsApp appears in the ERP schedule"></div><div class="txt"><h3>Booking agent</h3><p>Pick a free slot and the booking appears in the ERP.</p><i>Open demo</i></div></a>
+        <a class="card" href="demos/voice-agent/"><div class="shot"><img src="assets/img/voice.webp" width="880" height="500" loading="lazy" decoding="async" alt="A voice agent on a customer call while it looks up the order"></div><div class="txt"><h3>Voice agent for calls</h3><p>Follow a sample call while the agent checks the order.</p><i>Open demo</i></div></a>
+      </div>
+    </div>
+  </div></section>
 
   <section class="sec" id="about" aria-labelledby="h-about"><div class="wrap">
     <h2 id="h-about">What I do</h2>
@@ -220,7 +241,7 @@
         <div class="top"><h3>Odoo 19 ERP for a supermarket chain</h3><span class="meta">Retail, AR-Corporates</span></div>
         <p>HR, attendance, payroll, hiring and sales analytics for every branch, built from requirements to go-live. Around it: fingerprint device agents, a POS sales pipeline from SQL Server to PostgreSQL that reconciles each day's figures, and a nightly competitor price collector.</p>
         <ul class="nums"><li><b>16</b> custom modules</li><li><b>4,000+</b> automated tests</li><li>Live in production</li></ul>
-        <p class="stack"><a href="demos/supermarket-erp/">Try the demo with sample data</a></p>
+        <p class="stack"><a href="demos/supermarket-erp/">Open demo</a></p>
         <p class="stack">Odoo 19, Python, PostgreSQL, SQL Server, Docker, GitHub Actions</p>
       </article>
       <article class="case">
@@ -232,11 +253,13 @@
       <article class="case">
         <div class="top"><h3>WhatsApp agent for management</h3><span class="meta">EISAC Automation</span></div>
         <p>Managers ask about any figure and get a live answer from the ERP, plus a morning summary and an alert when a number looks off. Also an AI assistant inside Odoo 16 that turns Arabic and English requests into checked ERP actions.</p>
+        <p class="stack"><a href="demos/management-agent/">Open demo</a></p>
         <p class="stack">LLMs, WhatsApp, Odoo 16, LLaMA 3.3 through Groq</p>
       </article>
       <article class="case">
         <div class="top"><h3>Ordering, booking and voice agents</h3><span class="meta">Freelance clients</span></div>
         <p>WhatsApp and phone agents that take orders and bookings and write them into the client's system. All of them run in production, including one that takes a restaurant's customer orders.</p>
+        <p class="stack"><a href="demos/restaurant-agent/">Open demo</a></p>
         <p class="stack">LLMs, voice AI, WhatsApp, ERP integration</p>
       </article>
       <article class="case">
@@ -252,27 +275,13 @@
     </div>
   </div></section>
 
-  <section class="sec" id="demos" aria-labelledby="h-demos"><div class="wrap">
-    <h2 id="h-demos">Live demos</h2>
-    <div class="body">
-      <p class="lede">Rebuilt from systems running in production, with sample data. Each one explains how the real system works, and the chats carry an English line under every message.</p>
-      <div class="cards">
-        <a class="card wide" href="demos/supermarket-erp/"><div class="shot"><img src="assets/img/erp.webp" width="880" height="500" loading="lazy" decoding="async" alt="The general manager's morning brief: attendance by branch and the alerts behind it"></div><div class="txt"><h3>Supermarket chain ERP</h3><p>The morning brief, fingerprint attendance and Egyptian payroll.</p><i>Open demo</i></div></a>
-        <a class="card" href="demos/management-agent/"><div class="shot"><img src="assets/img/mgmt.webp" width="880" height="500" loading="lazy" decoding="async" alt="WhatsApp chat with the management agent next to live ERP figures by branch"></div><div class="txt"><h3>WhatsApp agent for management</h3><p>Ask about a branch and get the figure from the ERP.</p><i>Open demo</i></div></a>
-        <a class="card" href="demos/restaurant-agent/"><div class="shot"><img src="assets/img/restaurant.webp" width="880" height="500" loading="lazy" decoding="async" alt="A customer orders in Arabic on WhatsApp and the order appears on the kitchen screen"></div><div class="txt"><h3>Restaurant ordering agent</h3><p>Order in Arabic and watch it reach the kitchen screen.</p><i>Open demo</i></div></a>
-        <a class="card" href="demos/booking-agent/"><div class="shot"><img src="assets/img/booking.webp" width="880" height="500" loading="lazy" decoding="async" alt="A booking made on WhatsApp appears in the ERP schedule"></div><div class="txt"><h3>Booking agent</h3><p>Pick a free slot and the booking appears in the ERP.</p><i>Open demo</i></div></a>
-        <a class="card" href="demos/voice-agent/"><div class="shot"><img src="assets/img/voice.webp" width="880" height="500" loading="lazy" decoding="async" alt="A voice agent on a customer call while it looks up the order"></div><div class="txt"><h3>Voice agent for calls</h3><p>Follow a sample call while the agent checks the order.</p><i>Open demo</i></div></a>
-      </div>
-    </div>
-  </div></section>
-
   <section class="sec" id="experience" aria-labelledby="h-exp"><div class="wrap">
     <h2 id="h-exp">Experience</h2>
     <div class="body">
       <ul class="jobs">
         <li class="job"><h3>Senior AI Solutions Engineer</h3><span class="when">2026 to now</span><span class="at">AR-Corporates, Cairo</span>
           <ul><li>Took two company-wide Odoo 19 ERPs from requirements and specs to go-live with each client's team.</li><li>Built the integrations: fingerprint attendance agents, a reconciled POS sales pipeline, GPS tracking and a nightly price collector.</li><li>Set up Egyptian tax accounting and built a corporate website in Next.js.</li></ul></li>
-        <li class="job"><h3>AI Solutions Engineer, freelance and consulting</h3><span class="when">Jan 2025 to now</span><span class="at">Remote</span>
+        <li class="job"><h3>AI Solutions Engineer, freelance and consulting</h3><span class="when">2025 to now</span><span class="at">Remote</span>
           <ul><li>ERP systems for a cinema, a library and retail shops, each from requirements to go-live.</li><li>AI agents for WhatsApp and phone calls that work with the client's ERP, all running in production.</li><li>Company websites and mobile apps.</li></ul></li>
         <li class="job"><h3>AI Engineer and Odoo Developer</h3><span class="when">2026</span><span class="at">EISAC Automation, a Siemens Authorized Partner, Cairo</span>
           <ul><li>Built a WhatsApp agent that answers management from the ERP, with summaries and alerts.</li><li>Built an AI assistant inside Odoo with conversation memory, using LLaMA 3.3 through Groq.</li></ul></li>

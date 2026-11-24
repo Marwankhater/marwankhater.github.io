@@ -60,6 +60,10 @@
   .arch b { display: block; color: var(--page-ink); margin-bottom: 4px; }
   @media (max-width: 900px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
   .grid2 > * { min-width: 0; }
+  .grid2 > .panel + .panel { margin-top: 0; }
+  .grid2 .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 480px) { .tabs { display: grid; grid-template-columns: 1fr 1fr; } }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -95,7 +99,7 @@
         <div class="kpi"><span>Late</span><b>37</b></div>
       </div>
       <div class="tbl" tabindex="0" role="region" aria-label="Branches, scrolls sideways"><table>
-        <thead><tr><th>Branch</th><th>Attendance</th><th></th><th>Absent</th><th>Late</th></tr></thead>
+        <thead><tr><th>Branch</th><th>Attendance</th><th><span class="vh">Attendance bar</span></th><th>Absent</th><th>Late</th></tr></thead>
         <tbody id="branches"></tbody>
       </table></div>
       <p class="note">Attendance = present ÷ (present + absent). A branch that fell 15 points or more against the same day last week gets a red line. The head office counts as a branch.</p>
