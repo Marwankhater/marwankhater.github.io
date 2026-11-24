@@ -41,13 +41,16 @@
   .bar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 60px; }
   .bar .me { font-weight: 700; color: var(--ink); text-decoration: none; letter-spacing: -.01em; }
   .bar nav { display: flex; align-items: center; gap: 22px; font-size: 15px; }
-  .bar nav a { color: var(--muted); text-decoration: none; }
+  .bar nav a { color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
+  .bar .me { display: inline-flex; align-items: center; min-height: 44px; }
   .bar nav a:hover { color: var(--ink); }
-  .bar nav a.cv { color: var(--gold); font-weight: 600; border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); border-radius: 8px; padding: 6px 12px; }
+  .bar nav a.cv { color: var(--gold); font-weight: 600; border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); border-radius: 8px; padding: 0 14px; }
   .bar nav a.cv:hover { border-color: var(--gold); }
 
   /* intro */
-  .intro { padding-block: 64px 40px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .intro { padding-block: 64px 40px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 0 40px; align-items: start; }
+  .intro .face { grid-row: 1 / span 2; }
+  .intro .links { grid-column: 2; }
   .face { display: block; width: 200px; height: 250px; object-fit: cover; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); background: var(--raise); }
   h1 { margin: 0; font-size: clamp(36px, 5vw, 52px); line-height: 1.05; letter-spacing: -.03em; font-weight: 750; }
   .role { margin: 10px 0 0; font-size: 21px; font-weight: 650; color: var(--gold); }
@@ -121,35 +124,45 @@
   .repos li:last-child { border-bottom: 1px solid var(--rule); }
   .repos li > div { flex: 1 1 420px; min-width: 0; }
   .repos p { margin: 2px 0 0; font-size: 15.5px; color: var(--muted); }
-  .repos a.go { font-weight: 600; font-size: 15px; white-space: nowrap; }
+  .repos a.go { font-weight: 600; font-size: 15px; white-space: nowrap; display: inline-flex; align-items: center; min-height: 44px; }
 
   /* contact */
   .contact { margin-top: 80px; background: var(--raise); border-top: 1px solid var(--rule); padding: 56px 0 40px; }
   .contact .wrap { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 40px; }
-  .contact .mail { font-size: clamp(20px, 3vw, 26px); font-weight: 650; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+  .contact .mail { display: inline-block; padding-block: 10px; font-size: clamp(20px, 3vw, 26px); font-weight: 650; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
   .contact .mail:hover { text-decoration: underline; }
   .contact p { margin: 8px 0 0; }
   .contact .fine { grid-column: 1 / -1; margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 
   @media (max-width: 860px) {
-    .sec > .wrap, .contact .wrap { grid-template-columns: 1fr; gap: 16px; }
+    .sec > .wrap, .contact .wrap { grid-template-columns: 150px minmax(0, 1fr); gap: 28px; }
     .facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } .facts li:first-child { grid-column: auto; }
-    .intro { grid-template-columns: 120px minmax(0, 1fr); gap: 28px; } .face { width: 120px; height: 150px; border-radius: 12px; }
-    .points { grid-template-columns: 1fr; }
+    .intro { grid-template-columns: 160px minmax(0, 1fr); gap: 0 28px; padding-block: 48px 36px; }
+    .intro .face { grid-row: 1; width: 160px; height: 200px; border-radius: 14px; }
+    .intro .links { grid-column: 1 / -1; }
+    .btn { padding-inline: 16px; }
+    dl.skills { grid-template-columns: 150px minmax(0, 1fr); }
   }
   @media (max-width: 640px) {
     body { font-size: 16px; }
+    .bar nav { gap: 16px; }
     .bar nav a.hide-s { display: none; }
-    .intro { grid-template-columns: 1fr; gap: 20px; padding-block: 36px 32px; }
+    .intro { grid-template-columns: 1fr; gap: 20px; padding-block: 32px 32px; }
+    .intro .face { width: 120px; height: 150px; border-radius: 12px; }
     .facts b { font-size: 25px; } .facts span { font-size: 13.5px; }
-    .face { width: 120px; height: 150px; }
     .summary { font-size: 17px; }
     .links .btn { flex: 1 1 140px; }
     .links .btn.main { flex-basis: 100%; }
+    .sec > .wrap, .contact .wrap { grid-template-columns: 1fr; gap: 16px; }
+    .points { grid-template-columns: 1fr; }
     .cards { grid-template-columns: 1fr; }
     .sec { padding-top: 56px; }
     dl.skills { grid-template-columns: 1fr; } dl.skills dt { border-bottom: 0; padding-bottom: 0; } dl.skills dd { padding-top: 2px; }
     .job { grid-template-columns: 1fr; } .job .when { order: -1; }
+  }
+  @media (max-width: 380px) {
+    .bar nav a.hide-xs { display: none; }
+    .facts { grid-template-columns: 1fr 1fr; } 
   }
   @media print {
     :root { --bg: #fff; --raise: #fff; --ink: #111C27; --body: #2E3D4A; --muted: #5B6873; --rule: #DDE3E8; --gold: #7A5A1E; color-scheme: light; }
@@ -161,25 +174,25 @@
 <body>
 <header class="bar"><div class="wrap">
   <a class="me" href="./">Marwan Khater</a>
-  <nav aria-label="Sections"><a href="#work">Work</a><a href="#experience">Experience</a><a href="#skills" class="hide-s">Skills</a><a href="#contact" class="hide-s">Contact</a><a class="cv" href="assets/Marwan_Khater_CV.pdf">CV</a></nav>
+  <nav aria-label="Sections"><a href="#work">Work</a><a href="#experience" class="hide-xs">Experience</a><a href="#skills" class="hide-s">Skills</a><a href="#contact" class="hide-s">Contact</a><a class="cv" href="assets/Marwan_Khater_CV.pdf" target="_blank" rel="noopener">CV</a></nav>
 </div></header>
 
 <main>
   <section class="wrap intro" aria-labelledby="h-name">
-    <img class="face" src="assets/img/marwan-440.webp" srcset="assets/img/marwan-260.webp 260w, assets/img/marwan-440.webp 440w" sizes="(max-width: 860px) 120px, 200px" width="200" height="250" fetchpriority="high" decoding="async" alt="Marwan Khater">
+    <img class="face" src="assets/img/marwan-440.webp" srcset="assets/img/marwan-260.webp 260w, assets/img/marwan-440.webp 440w" sizes="(max-width: 640px) 120px, (max-width: 860px) 160px, 200px" width="200" height="250" fetchpriority="high" decoding="async" alt="Marwan Khater">
     <div>
       <h1 id="h-name">Marwan Khater</h1>
       <p class="role">Senior AI Solutions Engineer</p>
       <p class="where">Cairo, Egypt. Projects for companies in Egypt, Saudi Arabia and Europe.</p>
       <p class="summary">I turn what a business needs into a clear technical spec, then build and implement it until it runs in production. My work is AI agents, Odoo ERP systems and full-stack apps, delivered with the client's team from the first meeting to go&#8209;live.</p>
-      <div class="links">
+    </div>
+    <div class="links">
         <a class="btn main" href="mailto:marwanashraf410@gmail.com">Email me</a>
         <a class="btn" href="https://www.linkedin.com/in/marwan-khater-811660219/" rel="noopener">LinkedIn</a>
         <a class="btn" href="https://github.com/Marwankhater" rel="noopener">GitHub</a>
         <a class="btn" href="https://wa.me/201202853088" rel="noopener">WhatsApp</a>
-        <a class="btn" href="assets/Marwan_Khater_CV.pdf">Download CV</a>
+        <a class="btn" href="assets/Marwan_Khater_CV.pdf" target="_blank" rel="noopener">View CV</a>
       </div>
-    </div>
   </section>
 
   <div class="wrap">
