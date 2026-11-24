@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Supermarket chain ERP on Odoo 19 (demo) | Marwan Khater</title>
+<meta name="description" content="HR, attendance and payroll for a supermarket chain on Odoo 19: the general manager's morning brief, biometric attendance and an Egyptian payroll calculator. Interactive demo with sample data.">
+<link rel="canonical" href="https://marwankhater.github.io/demos/supermarket-erp/">
+<meta name="theme-color" content="#10161F">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Supermarket chain ERP on Odoo 19 (demo)">
+<meta property="og:description" content="The general manager's morning brief, biometric attendance and Egyptian payroll. Interactive demo with sample data.">
+<meta property="og:image" content="https://marwankhater.github.io/assets/og/erp.jpg">
+<meta property="og:url" content="https://marwankhater.github.io/demos/supermarket-erp/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2310161F'/%3E%3Ctext x='16' y='22' font-family='Arial,sans-serif' font-size='16' font-weight='700' fill='%23C9A55F' text-anchor='middle'%3EMK%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../assets/style.css">
+<style>
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; margin: 22px 0 0; border-bottom: 1px solid var(--page-rule); }
+  .tabs button { font: 600 15px var(--sans); color: var(--page-muted); background: none; border: 0; border-bottom: 2px solid transparent; padding: 12px 14px; min-height: 44px; cursor: pointer; }
+  .tabs button[aria-selected="true"] { color: var(--page-ink); border-bottom-color: var(--gold); }
+  .tabs button:hover { color: var(--page-ink); }
+  .view { padding: 20px 0 48px; }
+  .view[hidden] { display: none; }
+  .grid2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .panel .note { color: var(--muted); font-size: 13.5px; margin: 10px 0 0; }
+  .bar { height: 8px; border-radius: 4px; background: #E6ECEA; overflow: hidden; min-width: 70px; }
+  .bar i { display: block; height: 100%; background: var(--ok); }
+  tr.weak td:first-child { box-shadow: inset 3px 0 0 var(--bad); }
+  .look { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+  .look li { border: 1px solid var(--rule); border-radius: 10px; background: var(--soft); }
+  .look li.high { box-shadow: inset 3px 0 0 var(--bad); }
+  .look li.mid { box-shadow: inset 3px 0 0 var(--warn); }
+  .look button { all: unset; box-sizing: border-box; display: block; width: 100%; padding: 11px 13px; cursor: pointer; font-size: 14.5px; }
+  .look button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; border-radius: 10px; }
+  .look button b { font-weight: 650; }
+  .look .why { padding: 0 13px 12px; font-size: 13.5px; color: var(--muted); }
+  .look .why code { font-size: 12.5px; background: #fff; border: 1px solid var(--rule); border-radius: 5px; padding: 1px 5px; color: var(--ink); }
+  .feed { list-style: none; margin: 12px 0 0; padding: 0; max-height: 260px; overflow: auto; display: grid; gap: 6px; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+  .feed li { padding: 7px 10px; background: var(--soft); border: 1px solid var(--rule); border-radius: 8px; animation: pop .25s ease-out; }
+  .dev { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 12px; }
+  .dev div { border: 1px solid var(--rule); border-radius: 10px; padding: 9px 11px; font-size: 13.5px; background: var(--soft); }
+  .dev b { display: block; font-size: 14px; }
+  .row-btn { all: unset; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(0,0,0,.25); text-underline-offset: 3px; }
+  .row-btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .explain { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: var(--hl); font-size: 14px; }
+  .explain[hidden] { display: none; }
+  form.calc { display: grid; gap: 12px; margin-top: 12px; }
+  form.calc label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; }
+  form.calc input[type="number"] { font: 400 16px var(--sans); padding: 9px 11px; border: 1px solid var(--rule); border-radius: 8px; color: var(--ink); background: #fff; }
+  form.calc .opt { display: flex; gap: 8px; align-items: center; font-weight: 400; }
+  form.calc .opt input { width: 18px; height: 18px; }
+  form.calc fieldset { border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; margin: 0; display: grid; gap: 6px; }
+  form.calc legend { font-size: 14px; font-weight: 600; padding: 0 4px; }
+  .slip td.ref { color: var(--muted); font-size: 12.5px; white-space: normal; min-width: 180px; }
+  .slip tr.sum td { font-weight: 700; border-top: 2px solid var(--ink); }
+  .arch { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+  .arch li { border: 1px solid var(--page-rule); border-radius: 12px; padding: 14px; color: var(--page-body); font-size: 14.5px; }
+  .arch b { display: block; color: var(--page-ink); margin-bottom: 4px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+  .grid2 > * { min-width: 0; }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../../">Marwan Khater</a>
+  <nav class="nav" aria-label="Sections"><a href="../../#demos">Demos</a><a href="../../#work">Work</a><a href="../../#contact">Contact</a></nav>
+</div></header>
+<main class="wrap">
+<div class="demo-head">
+  <a class="back" href="../../#demos">← All demos</a>
+  <h1>Supermarket chain ERP on Odoo 19</h1>
+  <p>HR, attendance and payroll for every branch of a supermarket chain, built as custom Odoo 19 modules and live in production. Three parts of it you can try: the general manager's morning brief, biometric attendance, and the Egyptian payroll calculation.</p>
+  <p class="scripted"><span><b>Interactive demo with sample data.</b> The real system runs at a client, so its data stays private. There is no AI model in this one: the brief and its alerts come from fixed, tested rules, because the owner decided that no employee data leaves the server.</span></p>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Parts of the system">
+  <button role="tab" id="tab-brief" aria-controls="v-brief" aria-selected="true">Morning brief</button>
+  <button role="tab" id="tab-att" aria-controls="v-att" aria-selected="false" tabindex="-1">Attendance</button>
+  <button role="tab" id="tab-pay" aria-controls="v-pay" aria-selected="false" tabindex="-1">Payroll</button>
+  <button role="tab" id="tab-how" aria-controls="v-how" aria-selected="false" tabindex="-1">How it's built</button>
+</div>
+
+<!-- 1. Morning brief -->
+<section class="view" id="v-brief" role="tabpanel" aria-labelledby="tab-brief">
+  <div class="grid2">
+    <div class="panel">
+      <h2><span class="live"></span>Yesterday, all branches</h2>
+      <p class="sub">Sent to the general manager and the executives every day at noon. Branch managers cannot see it.</p>
+      <div class="kpis">
+        <div class="kpi hl"><span>Attendance</span><b>91%</b><small class="down">−3 pts vs last Wednesday</small></div>
+        <div class="kpi"><span>Present</span><b>412</b></div>
+        <div class="kpi"><span>Absent</span><b>41</b></div>
+        <div class="kpi"><span>Late</span><b>37</b></div>
+      </div>
+      <div class="tbl" tabindex="0" role="region" aria-label="Branches, scrolls sideways"><table>
+        <thead><tr><th>Branch</th><th>Attendance</th><th></th><th>Absent</th><th>Late</th></tr></thead>
+        <tbody id="branches"></tbody>
+      </table></div>
+      <p class="note">Attendance = present ÷ (present + absent). A branch that fell 15 points or more against the same day last week gets a red line. The head office counts as a branch.</p>
+    </div>
+    <div class="panel">
+      <h2>Worth a look</h2>
+      <p class="sub">Most serious first. Tap one to see the rule behind it.</p>
+      <ul class="look" id="look"></ul>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Attendance -->
+<section class="view" id="v-att" role="tabpanel" aria-labelledby="tab-att" hidden>
+  <div class="grid2">
+    <div class="panel">
+      <h2>Judged attendance day</h2>
+      <p class="sub">Shift 8:00 to 16:00 for everyone below. Sample lateness policy: 10 minutes' grace.</p>
+      <div class="tbl" tabindex="0" role="region" aria-label="Attendance, scrolls sideways"><table>
+        <thead><tr><th>Employee</th><th>In</th><th>Out</th><th>Result</th></tr></thead>
+        <tbody id="days"></tbody>
+      </table></div>
+      <div class="explain" id="dayWhy" hidden aria-live="polite"></div>
+      <p class="note">The day is judged from punches, the shift and approved leave. Tap a name to see how.</p>
+    </div>
+    <div class="panel">
+      <h2><span class="live"></span>Fingerprint devices</h2>
+      <p class="sub">A small agent on each branch PC reads its devices and sends the punches to Odoo.</p>
+      <div class="dev" id="devices"></div>
+      <div style="margin-top:14px"><button class="btn primary" id="sync" type="button">Sync devices now</button></div>
+      <ul class="feed" id="feed" aria-live="polite"></ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Payroll -->
+<section class="view" id="v-pay" role="tabpanel" aria-labelledby="tab-pay" hidden>
+  <div class="grid2">
+    <div class="panel">
+      <h2>Payslip</h2>
+      <p class="sub">Every line carries the legal reference it is computed from, as on the real payslip.</p>
+      <div class="tbl" tabindex="0" role="region" aria-label="Payslip, scrolls sideways"><table class="slip">
+        <thead><tr><th>Line</th><th>EGP</th><th>Based on</th></tr></thead>
+        <tbody id="slip"></tbody>
+      </table></div>
+      <p class="note" id="employer"></p>
+    </div>
+    <div class="panel">
+      <h2>Change the inputs</h2>
+      <p class="sub">Monthly figures in EGP. Sample employee.</p>
+      <form class="calc" id="calc">
+        <label>Gross monthly pay<input type="number" id="gross" min="0" step="100" value="14500" inputmode="numeric"></label>
+        <label>Salary advance to recover this month<input type="number" id="advance" min="0" step="50" value="1000" inputmode="numeric"></label>
+        <label>Lateness penalty, in days' wage<input type="number" id="penalty" min="0" step="0.5" value="1" inputmode="decimal"></label>
+        <label class="opt"><input type="checkbox" id="insured" checked> Insured with social insurance</label>
+        <fieldset>
+          <legend>Who bears the income tax</legend>
+          <label class="opt"><input type="radio" name="bearer" value="employee" checked> The employee (withheld from pay)</label>
+          <label class="opt"><input type="radio" name="bearer" value="company"> The company (grossed up)</label>
+        </fieldset>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- 4. How it's built -->
+<section class="view" id="v-how" role="tabpanel" aria-labelledby="tab-how" hidden>
+  <ul class="arch">
+    <li><b>16 custom Odoo 19 modules</b>Employees and branches, attendance, leave, payroll, travel allowances, expense approval, recruitment, the brief, reports and dashboards. No Odoo core file and no third-party module is modified; everything extends through inheritance.</li>
+    <li><b>4,000+ automated tests</b>Payroll figures, the attendance rules, the brief's alerts and who can see what. A branch manager seeing another branch's data is a failing test.</li>
+    <li><b>Fingerprint attendance agent</b>A small Python program on each branch PC, run as a scheduled task. It reads the devices and sends the punches to Odoo over HTTPS. Updates are signed.</li>
+    <li><b>POS sales pipeline</b>Sales come in from the point-of-sale database (SQL Server) to PostgreSQL every day, and each day's totals are reconciled against the source before anyone reports on them.</li>
+    <li><b>Competitor price collector</b>Runs every night and stores competitors' shelf prices next to the chain's own, for the commercial team.</li>
+    <li><b>Deployment</b>Docker, Nginx and fail2ban on the server, a staging copy for every release, and a CI gate that runs the tests before anything ships.</li>
+    <li><b>Payroll law in one place</b>Income tax brackets of Law 7/2024 with the withdrawal of lower bands above EGP 600,000, the EGP 20,000 personal exemption, and social insurance at 11% and 18.75% within the yearly wage bounds. The bounds and rates are HR settings, so next year's change is data entry.</li>
+    <li><b>From requirements to go-live</b>Built with the client's HR and finance teams: their rules written down as specs, their data migrated, and each module released only after they checked it.</li>
+  </ul>
+</section>
+</main>
+<footer class="site"><div class="wrap">
+  <span>Marwan Khater, Cairo, Egypt</span>
+  <span class="links"><a href="mailto:marwanashraf410@gmail.com">Email</a><a href="https://wa.me/201202853088">WhatsApp</a><a href="https://www.linkedin.com/in/marwan-khater-811660219/">LinkedIn</a><a href="https://github.com/Marwankhater">GitHub</a></span>
+</div></footer>
+<script>
+const $ = id => document.getElementById(id);
+const egp = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/* Tabs: arrow keys move between them, as in any tab list. */
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function show(tab) {
+  tabs.forEach(t => {
+    const on = t === tab;
+    t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1;
+    $(t.getAttribute('aria-controls')).hidden = !on;
+  });
+  history.replaceState(null, '', '#' + tab.getAttribute('aria-controls').slice(2));
+}
+tabs.forEach((t, i) => {
+  t.addEventListener('click', () => show(t));
+  t.addEventListener('keydown', e => {
+    const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; n.focus(); show(n); }
+  });
+});
+const start = tabs.find(t => t.getAttribute('aria-controls') === 'v-' + location.hash.slice(1));
+if (start) show(start);
+
+/* 1. Morning brief (sample figures) */
+const BR = [
+  ['Head office', 58, 2, 3, 97, 96], ['Branch 1', 86, 5, 6, 95, 94], ['Branch 2', 71, 9, 8, 89, 93],
+  ['Branch 3', 52, 13, 7, 80, 95], ['Branch 4', 64, 4, 5, 94, 92], ['Branch 5', 47, 5, 4, 90, 91], ['Branch 6', 34, 3, 4, 92, 90],
+]; // name, present, absent, late, attendance %, same day last week %
+$('branches').innerHTML = BR.slice().sort((a, b) => a[4] - b[4]).map(([n, p, a, l, pct, last]) =>
+  `<tr class="${last - pct >= 15 ? 'weak' : ''}"><td>${n}</td><td>${pct}%</td><td><div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div></td><td>${a}</td><td>${l}</td></tr>`).join('');
+const LOOK = [
+  ['high', 'Branch 3: attendance fell 15 points', '80% yesterday against 95% on the same day last week.',
+   'A branch is flagged when its attendance falls <code>15</code> points or more against the same weekday a week earlier. Comparing Wednesday with Wednesday avoids false alarms from the weekly pattern.'],
+  ['high', 'Branch 3: punches fell to 40% of normal', '118 punches yesterday; the usual Wednesday is 296.',
+   'Flagged below <code>60%</code> of the average of the same weekday over the last 4 weeks, and marked urgent below <code>30%</code>. Weeks when the branch sent no punches at all are left out of the average, and branches averaging under 20 punches are skipped.'],
+  ['high', 'Branch 5: fingerprint device silent for 31 hours', 'Device B last sent punches on Tuesday at 07:42.',
+   'Flagged when a device that used to report has been silent for <code>24</code> hours, urgent after <code>72</code>. A device that has never reported is shown on the dashboard every day instead, so the brief does not repeat it.'],
+  ['mid', 'Branch 2: absences tripled', '9 absent yesterday; the usual is 3 or 4.',
+   'Flagged when absences (or late arrivals) are at least <code>3</code> and at least twice the branch\'s own 14-day average plus one. Each branch is compared with itself, not with the chain.'],
+  ['mid', 'Employee 1187 checked in at 10:55', 'Usually checks in around 08:10.',
+   'Flagged when a check-in is <code>90</code> minutes or more from the person\'s usual time (the median of the last 20 days, from at least 8), only if that usual time is steady (spread up to 45 minutes) and the shift itself did not move.'],
+  ['mid', 'Employee 2044 punched at another branch', 'Home branch 1, punched at branch 4, no errand recorded.',
+   'Flagged when someone punches on another branch\'s device, unless they had an errand that day or manage the branch they punched at.'],
+];
+$('look').innerHTML = LOOK.map(([sev, title, fact, rule], i) =>
+  `<li class="${sev}"><button type="button" aria-expanded="false" aria-controls="why${i}"><b>${title}</b><br>${fact}</button><div class="why" id="why${i}" hidden>${rule}</div></li>`).join('');
+$('look').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const open = b.getAttribute('aria-expanded') !== 'true';
+  b.setAttribute('aria-expanded', open); $(b.getAttribute('aria-controls')).hidden = !open;
+});
+
+/* 2. Attendance (sample) */
+const DEVICES = [['Branch 1 · A', 'Online', 'ok'], ['Branch 2 · A', 'Online', 'ok'], ['Branch 3 · A', 'Online', 'ok'], ['Branch 5 · B', 'Silent 31 h', 'bad']];
+$('devices').innerHTML = DEVICES.map(([n, s, c]) => `<div><b>${n}</b><span class="pill ${c}">${s}</span></div>`).join('');
+const PEOPLE = [
+  { id: 'E-1021', name: 'Employee 1021', punches: ['07:52', '16:04'] },
+  { id: 'E-1187', name: 'Employee 1187', punches: ['10:55', '16:10'] },
+  { id: 'E-1342', name: 'Employee 1342', punches: ['08:22', '16:01'] },
+  { id: 'E-1508', name: 'Employee 1508', punches: ['07:58'] },
+  { id: 'E-1630', name: 'Employee 1630', punches: [], leave: true },
+  { id: 'E-1712', name: 'Employee 1712', punches: [] },
+  { id: 'E-1899', name: 'Employee 1899', punches: ['07:55', '17:20'] },
+];
+const mins = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+function judge(p, synced) {
+  const got = synced ? p.punches : [];
+  if (!got.length) {
+    if (p.leave) return ['Approved leave', 'ok', 'No punches, but there is approved leave for the day, so it is not an absence.'];
+    if (!synced) return ['Waiting for punches', 'warn', 'The device has not been read yet today.'];
+    return ['Absent', 'bad', 'Absent = scheduled for a shift, no approved leave, and the shift ended without a punch.'];
+  }
+  const late = mins(got[0]) - mins('08:00');
+  if (got.length === 1) return ['Forgot to punch out', 'warn', `Checked in at ${got[0]} with no check-out. It goes to the branch manager to confirm rather than being guessed.`];
+  const over = mins(got[1]) - mins('16:00');
+  if (late > 10) return [`Late ${late} min`, 'warn', `In at ${got[0]}: ${late} minutes after the 8:00 start, beyond the 10 minutes' grace. The lateness policy decides the deduction.`];
+  if (over >= 30) return [`Overtime ${Math.floor(over / 60)} h ${over % 60} min`, 'ok', `Out at ${got[1]}, ${over} minutes after 16:00. Overtime counts from 30 minutes, in this sample policy.`];
+  return ['On time', 'ok', `In at ${got[0]}, out at ${got[1]}.`];
+}
+let synced = false;
+function renderDays() {
+  $('days').innerHTML = PEOPLE.map(p => {
+    const [label, c] = judge(p, synced);
+    return `<tr><td><button class="row-btn" type="button" data-id="${p.id}">${p.name}</button></td><td>${synced ? p.punches[0] || '—' : '—'}</td><td>${synced ? p.punches[1] || '—' : '—'}</td><td><span class="pill ${c}">${label}</span></td></tr>`;
+  }).join('');
+}
+renderDays();
+$('days').addEventListener('click', e => {
+  const b = e.target.closest('.row-btn'); if (!b) return;
+  const p = PEOPLE.find(x => x.id === b.dataset.id);
+  const [label, , why] = judge(p, synced);
+  $('dayWhy').hidden = false; $('dayWhy').innerHTML = `<b>${p.name}: ${label}.</b> ${why}`;
+});
+$('sync').addEventListener('click', async () => {
+  const btn = $('sync'); btn.disabled = true; btn.textContent = 'Syncing…';
+  const feed = $('feed');
+  const punches = PEOPLE.flatMap(p => p.punches.map(t => [t, p.name])).sort((a, b) => mins(a[0]) - mins(b[0]));
+  for (const [t, n] of punches) {
+    await new Promise(r => setTimeout(r, 260));
+    const li = document.createElement('li'); li.textContent = `${t}  ${n}  ·  Branch 1 device A`; feed.prepend(li);
+  }
+  synced = true; renderDays();
+  btn.textContent = 'Synced';
+});
+
+/* 3. Payroll: Income Tax Law 91/2005 Art. 8 as amended by Law 7/2024, Social Insurance Law 148/2019. */
+const BRACKETS = [[40000, 0], [55000, .10], [70000, .15], [200000, .20], [400000, .225], [1200000, .25], [Infinity, .275]];
+const WITHDRAWAL = [[1200000, 1200000, .25], [900000, 400000, .225], [800000, 200000, .20], [700000, 70000, .15], [600000, 55000, .10]];
+const EXEMPTION = 20000, INS = { min: 2700, max: 16700, emp: .11, er: .1875 };
+function annualTax(taxable) {
+  if (taxable <= 0) return 0;
+  let tax = 0, lower = 0;
+  const w = WITHDRAWAL.find(([above]) => taxable > above);
+  if (w) { tax = Math.min(taxable, w[1]) * w[2]; lower = w[1]; }
+  for (const [upper, rate] of BRACKETS) {
+    if (upper <= lower) continue;
+    const top = Math.min(taxable, upper);
+    if (top > lower) { tax += (top - lower) * rate; lower = top; }
+    if (taxable <= upper) break;
+  }
+  return tax;
+}
+const monthlyTax = m => Math.round(annualTax(m * 12 - EXEMPTION) / 12 * 100) / 100;
+function grossedUp(m) { // the company pays the tax, so the tax is itself taxable income
+  let tax = monthlyTax(m);
+  for (let i = 0; i < 40; i++) { const t = monthlyTax(m + tax); if (Math.abs(t - tax) < 0.005) return t; tax = t; }
+  return tax;
+}
+function payslip() {
+  const gross = Math.max(0, +$('gross').value || 0), advance = Math.max(0, +$('advance').value || 0);
+  const penaltyDays = Math.min(5, Math.max(0, +$('penalty').value || 0));
+  const insured = $('insured').checked, company = document.querySelector('[name="bearer"]:checked').value === 'company';
+  const insWage = insured ? Math.min(INS.max, Math.max(INS.min, gross)) : 0;
+  const empIns = Math.round(insWage * INS.emp * 100) / 100, erIns = Math.round(insWage * INS.er * 100) / 100;
+  const taxable = gross - empIns;
+  const tax = company ? grossedUp(taxable) : monthlyTax(taxable);
+  const dayWage = Math.round(gross / 30 * 100) / 100, penalty = Math.round(dayWage * penaltyDays * 100) / 100;
+  const net = gross - empIns - (company ? 0 : tax) - penalty - advance;
+  const rows = [
+    ['Gross pay', gross, 'Contract'],
+    ['Social insurance, employee 11%', -empIns, insured ? `11% of the insurance wage ${egp(insWage)}, kept between ${egp(INS.min)} and ${egp(INS.max)} (Law 148/2019, 2026 bounds)` : 'Not insured'],
+    [company ? 'Income tax, paid by the company' : 'Income tax withheld', company ? 0 : -tax, company ? `${egp(tax)} paid by the company on top of pay. Because the company pays it, the tax is itself income, so the base is grossed up until it settles (Law 91/2005)` : 'The month annualised, less the EGP 20,000 exemption, taxed by the Law 7/2024 brackets, one twelfth withheld'],
+    ['Lateness penalty', -penalty, `${penaltyDays} day(s) at ${egp(dayWage)} a day; capped at 5 days for one violation in a month (Labour Law 14/2025, Art. 143)`],
+    ['Advance recovered', -advance, 'Salary advance schedule'],
+  ];
+  $('slip').innerHTML = rows.map(([n, v, ref]) => `<tr><td>${n}</td><td>${egp(v)}</td><td class="ref">${ref}</td></tr>`).join('') +
+    `<tr class="sum"><td>Net pay</td><td>${egp(net)}</td><td class="ref"></td></tr>`;
+  $('employer').textContent = insured
+    ? `The company also pays ${egp(erIns)} social insurance (18.75%)${company ? ` and ${egp(tax)} income tax` : ''}. Penalty days are capped at 5.`
+    : `Not insured, so no social insurance on either side.${company ? ` The company pays ${egp(tax)} income tax.` : ''}`;
+}
+$('calc').addEventListener('input', payslip);
+$('calc').addEventListener('submit', e => e.preventDefault());
+payslip();
+</script>
+</body>
+</html>

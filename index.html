@@ -91,6 +91,10 @@
   /* demos with real screenshots */
   .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   .card { display: block; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; color: var(--body); text-decoration: none; background: var(--raise); transition: border-color .2s; }
+  .card.wide { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+  .card.wide .shot { border-bottom: 0; border-right: 1px solid var(--rule); }
+  .card.wide .txt { align-self: center; padding: 20px 22px; }
+  .card.wide h3 { font-size: 18px; }
   .card:hover { border-color: color-mix(in srgb, var(--gold) 70%, transparent); }
   .shot { background: var(--shot); border-bottom: 1px solid var(--rule); aspect-ratio: 880 / 500; overflow: hidden; }
   .shot img { width: 100%; height: 100%; object-fit: cover; object-position: top left; }
@@ -149,6 +153,7 @@
     .sec > .wrap, .contact .wrap { grid-template-columns: 1fr; gap: 16px; }
     .points { grid-template-columns: 1fr; }
     .cards { grid-template-columns: 1fr; }
+    .card.wide { display: block; } .card.wide .shot { border-right: 0; border-bottom: 1px solid var(--rule); } .card.wide .txt { padding: 14px 16px 16px; }
     .sec { padding-top: 56px; }
     dl.skills { grid-template-columns: 1fr; } dl.skills dt { border-bottom: 0; padding-bottom: 0; } dl.skills dd { padding-top: 2px; }
     .job { grid-template-columns: 1fr; } .job .when { order: -1; }
@@ -208,6 +213,7 @@
         <div class="top"><h3>Odoo 19 ERP for a supermarket chain</h3><span class="meta">Retail, AR-Corporates</span></div>
         <p>HR, attendance, payroll, hiring and sales analytics for every branch, built from requirements to go-live. Around it: fingerprint device agents, a POS sales pipeline from SQL Server to PostgreSQL that reconciles each day's figures, and a nightly competitor price collector.</p>
         <ul class="nums"><li><b>16</b> custom modules</li><li><b>4,000+</b> automated tests</li><li>Live in production</li></ul>
+        <p class="stack"><a href="demos/supermarket-erp/">Try the demo with sample data</a></p>
         <p class="stack">Odoo 19, Python, PostgreSQL, SQL Server, Docker, GitHub Actions</p>
       </article>
       <article class="case">
@@ -237,8 +243,9 @@
   <section class="sec" id="demos" aria-labelledby="h-demos"><div class="wrap">
     <h2 id="h-demos">Live demos</h2>
     <div class="body">
-      <p class="lede">Scripted versions of agents running in production, with sample data. Each one explains how the real agent works, and every message has an English line.</p>
+      <p class="lede">Rebuilt from systems running in production, with sample data. Each one explains how the real system works, and the chats carry an English line under every message.</p>
       <div class="cards">
+        <a class="card wide" href="demos/supermarket-erp/"><div class="shot"><img src="assets/img/erp.webp" width="880" height="500" loading="lazy" decoding="async" alt="The general manager's morning brief: attendance by branch and the alerts behind it"></div><div class="txt"><h3>Supermarket chain ERP</h3><p>The morning brief, fingerprint attendance and Egyptian payroll.</p><i>Open demo</i></div></a>
         <a class="card" href="demos/management-agent/"><div class="shot"><img src="assets/img/mgmt.webp" width="880" height="500" loading="lazy" decoding="async" alt="WhatsApp chat with the management agent next to live ERP figures by branch"></div><div class="txt"><h3>WhatsApp agent for management</h3><p>Ask about a branch and get the figure from the ERP.</p><i>Open demo</i></div></a>
         <a class="card" href="demos/restaurant-agent/"><div class="shot"><img src="assets/img/restaurant.webp" width="880" height="500" loading="lazy" decoding="async" alt="A customer orders in Arabic on WhatsApp and the order appears on the kitchen screen"></div><div class="txt"><h3>Restaurant ordering agent</h3><p>Order in Arabic and watch it reach the kitchen screen.</p><i>Open demo</i></div></a>
         <a class="card" href="demos/booking-agent/"><div class="shot"><img src="assets/img/booking.webp" width="880" height="500" loading="lazy" decoding="async" alt="A booking made on WhatsApp appears in the ERP schedule"></div><div class="txt"><h3>Booking agent</h3><p>Pick a free slot and the booking appears in the ERP.</p><i>Open demo</i></div></a>
