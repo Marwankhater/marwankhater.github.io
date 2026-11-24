@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page not found</title>
+<meta name="robots" content="noindex">
+<style>body{margin:15vh auto;max-width:560px;padding:0 20px;font:17px/1.7 ui-sans-serif,-apple-system,"Segoe UI",Tahoma,sans-serif;color:#15202B;background:#fff}h1{font-size:26px;margin:0 0 8px}a{color:#0B7A5F;font-weight:600}p{margin:8px 0}[dir=rtl]{text-align:right}</style>
+</head>
+<body>
+<h1>Page not found</h1>
+<p>The link may have changed. <a id="home" href="/">Go to the home page</a></p>
+<p dir="rtl" lang="ar">الصفحة غير موجودة. <a id="homeAr" href="/">الصفحة الرئيسية</a></p>
+<script>
+  // visitors of the company site go back to the company site; everyone else goes to the home page
+  if (location.pathname.indexOf('/mk/') === 0) { document.getElementById('home').href = '/mk/'; document.getElementById('homeAr').href = '/mk/ar/'; }
+</script>
+</body>
+</html>
