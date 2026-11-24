@@ -119,9 +119,14 @@ function effect(name) {
   }
   if (name === 'end') {
     // One row for this sample call, updated on every replay instead of piling up.
+    // The log runs oldest first, so the row goes in by its time of day (usually at the bottom).
     let row = document.getElementById('demoCall');
-    if (!row) { row = document.createElement('tr'); row.id = 'demoCall'; document.getElementById('calls').prepend(row); }
+    if (!row) { row = document.createElement('tr'); row.id = 'demoCall'; }
     row.innerHTML = '<td></td><td>+20 1•• ••• 7730</td><td>Order status</td><td><span class="pill ok">Answered</span></td>';
+    const mins = s => { const m = /(\d+):(\d+)\s*([AP]M)/i.exec(s); return m ? (m[1] % 12) * 60 + +m[2] + (/p/i.test(m[3]) ? 720 : 0) : 0; };
+    const body = document.getElementById('calls');
+    const later = [...body.rows].find(r => r !== row && mins(r.cells[0].textContent) > mins(now));
+    body.insertBefore(row, later || null);
     row.firstChild.textContent = now; row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 1200);
   }
 }

@@ -71,7 +71,7 @@
     <div>
       <h3>What this page shows</h3>
       <ul>
-        <li>Thursday, Friday and Saturday, each with its own free slots. A taken time is refused with the free ones listed.</li>
+        <li>Thursday, Friday and Saturday, each with its own free slots. A taken time is refused with the free ones listed. The demo's today is Wednesday, so "بكرة" (tomorrow) means Thursday and "بعد بكرة" means Friday.</li>
         <li>Change or cancel a booking: the same ERP row updates, and a cancelled slot becomes free again.</li>
         <li>The chat and the ERP table always show the same day and time.</li>
       </ul>
@@ -94,7 +94,26 @@ const DAYS = {
 };
 const S = { day: null, pending: null, booking: null, nextRef: 2381, reminder: false, mode: 'new' };
 
-function dayIn(t) { return Object.keys(DAYS).find(k => DAYS[k].re.test(t)) || null; }
+// The demo's "today" is the Wednesday before this schedule, so tomorrow is Thursday.
+const WEEK = ['wed', 'thu', 'fri', 'sat'];
+const TODAY = { ar: 'الأربع', en: 'Wednesday' };
+const REL = [
+  { re: /بعد بعد بكر|in three days|three days from now/, off: 3, ar: 'بعد بعد بكرة', en: 'Three days from now' },
+  { re: /بعد بكر|day after tomorrow/, off: 2, ar: 'بعد بكرة', en: 'The day after tomorrow' },
+  { re: /بكر[هاة]|tomorrow|tmrw/, off: 1, ar: 'بكرة', en: 'Tomorrow' },
+  { re: /النهارده|النهاردا|انهارده|today|tonight/, off: 0, ar: 'النهارده', en: 'Today' },
+];
+// "بكرة", "بعد بكرة" or "today" counted from the demo's today. Returns {day, ar, en}; day is null when it has no slots.
+function relDay(t) {
+  const r = REL.find(x => x.re.test(t));
+  return r ? { day: WEEK[r.off] in DAYS ? WEEK[r.off] : null, ar: r.ar, en: r.en } : null;
+}
+function dayIn(t) {
+  const named = Object.keys(DAYS).find(k => DAYS[k].re.test(t));
+  if (named) return named;
+  const r = relDay(t);
+  return r ? r.day : null;
+}
 // "5:30", "5.30", "الساعة 7", "خمسة ونص", "4 العصر" -> "H:MM" (all afternoon or evening slots)
 function timeIn(t) {
   let m = t.match(/(\d{1,2})\s*[:.]\s*(\d{2})/);
@@ -149,6 +168,14 @@ function respond(raw, t) {
 
   const dateOnly = t.match(/(?:يوم|بتاريخ)\s*(\d{1,2})(?!\s*[:.])/);
   const d = dayIn(t); const tm = timeIn(t);
+  const rel = relDay(t);
+  if (rel && !rel.day && !Object.keys(DAYS).some(k => DAYS[k].re.test(t))) {
+    if (rel.ar === 'النهارده') S.day = 'thu';
+    return [{ ar: rel.ar === 'النهارده' ? `النهارده ${TODAY.ar} ومفيش مواعيد فاضية. أقرب مواعيد بكرة الخميس: ${list('thu')}.` : 'الجدول اللي قدامي لحد السبت بس. تحب الخميس ولا الجمعة ولا السبت؟',
+      en: rel.ar === 'النهارده' ? `Today is ${TODAY.en} and it is fully booked. The nearest slots are tomorrow, Thursday: ${listEn('thu')}.` : 'The schedule I can see ends on Saturday. Thursday, Friday or Saturday?' }];
+  }
+  // Say which day "بكرة" is, so the customer can check it.
+  const relNote = rel && rel.day && !Object.keys(DAYS).some(k => DAYS[k].re.test(t)) ? { ar: `${rel.ar} يبقى ${DAYS[rel.day].ar}. `, en: `${rel.en} is ${DAYS[rel.day].en}. ` } : { ar: '', en: '' };
   if (dateOnly && !d) return [{ ar: 'الجدول اللي قدامي فيه الخميس والجمعة والسبت بس. تحب أنهي يوم فيهم؟', en: 'The schedule I can see covers Thursday, Friday and Saturday. Which day would you like?' }];
   if (d) S.day = d;
   if (tm) {
@@ -162,7 +189,7 @@ function respond(raw, t) {
   if (d && S.pendingTime) { const p = S.pendingTime; S.pendingTime = null; return respond(raw, t + ' ' + p); }
   if (d || has(t, /احجز|حجز|ميعاد|معاد|متاح|book|slot/)) {
     if (!S.day) return [{ ar: 'تحب يوم إيه؟ عندنا مواعيد الخميس والجمعة والسبت.', en: 'Which day? There are slots on Thursday, Friday and Saturday.' }];
-    return [{ ar: `متاح ${DAYS[S.day].ar}: ${list(S.day)}. تحب أنهي ميعاد؟`, en: `Free on ${DAYS[S.day].en}: ${listEn(S.day)}. Which time?` }];
+    return [{ ar: `${relNote.ar}متاح ${DAYS[S.day].ar}: ${list(S.day)}. تحب أنهي ميعاد؟`, en: `${relNote.en}Free on ${DAYS[S.day].en}: ${listEn(S.day)}. Which time?` }];
   }
   if (has(t, /شكرا|thanks/)) return [{ ar: 'العفو، في انتظارك 🙏', en: "You're welcome, see you then." }];
   return [{ ar: 'مش متأكد إني فهمت. ممكن تقول اليوم والساعة، زي "الخميس 5:30"، أو تطلب تغيير أو إلغاء الحجز.', en: 'I am not sure I understood. Say a day and time, like "Thursday 5:30", or ask to change or cancel the booking.' }];
@@ -201,7 +228,7 @@ function fx(e) {
 }
 
 mountChat(document.getElementById('phone'), {
-  day: 'Today',
+  day: 'Today · Wednesday',
   intro: [{ ar: 'أهلاً بيك 👋 تحب تحجز ميعاد؟', en: 'Hi! Would you like to book an appointment?', delay: 700 }],
   respond, chips, onEffect: fx,
 });

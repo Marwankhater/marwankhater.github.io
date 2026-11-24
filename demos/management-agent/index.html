@@ -79,7 +79,7 @@
     <div>
       <h3>What this page shows</h3>
       <ul>
-        <li>Any branch from 1 to 6, by number, with sales, margin, attendance or returns. Branch 7 gets "we only have 6".</li>
+        <li>Any branch from 1 to 6, by number, with sales, margin, attendance or returns. Sales and margin cover today, yesterday, this month and last month, and it can name the best or worst branch. Branch 7 gets "we only have 6".</li>
         <li>The purchase order flow: low stock, a proposed order, then a draft only after you confirm.</li>
         <li>The table on the right highlights exactly the rows each answer is about.</li>
       </ul>
@@ -108,34 +108,134 @@ const LOW = [
   { ar: 'زيت 1 لتر', en: 'Oil 1 L', branch: 2, left: 9, reorder: 30, qty: 120 },
   { ar: 'سكر 1 كيلو', en: 'Sugar 1 kg', branch: 6, left: 22, reorder: 50, qty: 200 },
 ];
-const S = { last: null, poDraft: false, po: null };
+const S = { last: null, poDraft: false, po: null, ctx: null };
 const pct = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + '%';
 const STATUS_AR = { 'On track': 'ماشي كويس', 'Returns high': 'المرتجعات عالية', Below: 'أقل من المتوقع' };
+const money = n => n.toLocaleString('en-US');
+const r1 = v => Math.round(v * 10 + 1e-9) / 10;
+
+// Every period is worked out from the table above, so the answers always agree with each other:
+// yesterday's EGP 1.24M (the panel's KPI) is split by each branch's share of today's sales;
+// that was 6% over the weekly average, which gives a normal day, and 30 normal days make last
+// month. This month is the normal days already closed plus today so far.
+const YESTERDAY_TOTAL = 1240000;
+const TODAY_TOTAL = Object.values(B).reduce((a, b) => a + b.sales, 0);
+const DAY_OF_MONTH = new Date().getDate();
+Object.entries(B).forEach(([n, b]) => {
+  b.yesterday = Math.round(YESTERDAY_TOTAL * b.sales / TODAY_TOTAL / 50) * 50;
+  const normal = b.yesterday / 1.06;
+  b.lastMonth = Math.round(normal * 30 / 1000) * 1000;
+  b.thisMonth = Math.round(normal * (DAY_OF_MONTH - 1) / 1000) * 1000 + b.sales;
+  b.m = { lastMonth: b.margin, thisMonth: r1(b.margin + b.vs / 20) };
+  b.m.today = r1(b.m.thisMonth + b.vs / 40);
+  b.m.yesterday = r1(b.m.thisMonth + ((n * 7) % 5 - 2) / 10);
+});
+// Rounding leaves branch 6 to close the gap, so the six still add up to the KPI exactly.
+B[6].yesterday += YESTERDAY_TOTAL - Object.values(B).reduce((a, b) => a + b.yesterday, 0);
+const SALES = { today: b => b.sales, yesterday: b => b.yesterday, thisMonth: b => b.thisMonth, lastMonth: b => b.lastMonth };
+const WHEN = {
+  today: { ar: 'النهارده لحد دلوقتي', en: 'today so far' },
+  yesterday: { ar: 'امبارح', en: 'yesterday' },
+  thisMonth: { ar: 'من أول الشهر لحد دلوقتي', en: 'this month so far' },
+  lastMonth: { ar: 'الشهر اللي فات', en: 'last month' },
+};
 
 function branches(t) {
   const out = new Set();
-  const re = new RegExp('(?:فرع|الفرع|branch)\\s*(?:رقم\\s*)?' + NUM, 'g');
+  const re = new RegExp('(?:فرع|الفرع|branch)\\s*(?:رقم\\s*|no\\.?\\s*|#\\s*)?' + NUM + '(?![\\d\\p{L}])', 'gu');
   for (const m of t.matchAll(re)) out.add(num(m[1]));
   return [...out];
 }
 function metric(t) {
-  if (has(t, /غياب|غايب|حضور|موظف|attendance|absent/)) return 'att';
+  if (has(t, /غياب|غايب|حضور|موظف|attendance|absen/)) return 'att';
   if (has(t, /هامش|ربح|مكسب|margin|profit/)) return 'margin';
-  if (has(t, /مرتجع|returns?/)) return 'returns';
-  return 'sales';
+  if (has(t, /مرتجع|returns?\b/)) return 'returns';
+  if (has(t, /مبيعات|بيع|باع|ايراد|دخل|sales|sold|revenue|turnover/)) return 'sales';
+  return null;
 }
-function branchAnswer(n, m) {
+function period(t) {
+  if (has(t, /اول امبارح|اول امس|day before yesterday/)) return 'older';
+  if (has(t, /امبارح|مبارح|امس|yesterday/)) return 'yesterday';
+  if (has(t, /الشهر (?:اللي|الي|اللى)? ?فات|الشهر الماضي|الشهر السابق|الشهر القديم|last month|previous month|past month/)) return 'lastMonth';
+  if (has(t, /الشهر|شهر ده|this month|month to date|mtd/)) return 'thisMonth';
+  if (has(t, /النهارده|النهاردا|انهارده|اليوم|today|so far/)) return 'today';
+  return null;
+}
+const OLDER = { ar: 'قدامي في الديمو ده أرقام النهارده وامبارح والشهر ده والشهر اللي فات بس.', en: 'In this demo I have today, yesterday, this month and last month only.' };
+const TODAY_ONLY = { ar: 'الرقم ده عندي للنهارده بس. ', en: 'I only keep this one for today. ' };
+
+function branchAnswer(n, m, p) {
   const b = B[n];
-  if (m === 'att') return { ar: `فرع ${n}: ${b.absent ? b.absent + ' غياب النهارده' : 'مفيش غياب النهارده'}.`, en: `Branch ${n}: ${b.absent ? b.absent + ' absent today' : 'nobody absent today'}.` };
-  if (m === 'margin') return { ar: `هامش الربح الإجمالي لفرع ${n} الشهر اللي فات ${b.margin}%.`, en: `Branch ${n} gross margin last month: ${b.margin}%.` };
-  if (m === 'returns') return n === 2
-    ? { ar: 'مرتجعات فرع 2 النهارده 3 أضعاف المعتاد: 14 مرتجع بـ 6,350 جنيه، 11 منهم على كاشير 3 بعد الساعة 2.', en: 'Branch 2 returns are 3× normal today: 14 returns worth EGP 6,350, 11 of them on till 3 after 2 PM.' }
-    : { ar: `مرتجعات فرع ${n} في المعدل الطبيعي النهارده.`, en: `Branch ${n} returns are normal today.` };
+  if (m === 'att' || m === 'returns') {
+    const pre = p && p !== 'today' ? TODAY_ONLY : { ar: '', en: '' };
+    const r = m === 'att'
+      ? { ar: `فرع ${n}: ${b.absent ? b.absent + ' غياب النهارده' : 'مفيش غياب النهارده'}.`, en: `Branch ${n}: ${b.absent ? b.absent + ' absent today' : 'nobody absent today'}.` }
+      : n === 2
+        ? { ar: 'مرتجعات فرع 2 النهارده 3 أضعاف المعتاد: 14 مرتجع بـ 6,350 جنيه، 11 منهم على كاشير 3 بعد الساعة 2.', en: 'Branch 2 returns are 3× normal today: 14 returns worth EGP 6,350, 11 of them on till 3 after 2 PM.' }
+        : { ar: `مرتجعات فرع ${n} في المعدل الطبيعي النهارده.`, en: `Branch ${n} returns are normal today.` };
+    return { ar: pre.ar + r.ar, en: pre.en + r.en };
+  }
+  if (m === 'margin') {
+    const q = p || 'lastMonth';
+    return { ar: `هامش الربح الإجمالي لفرع ${n} ${WHEN[q].ar}: ${b.m[q]}%.`, en: `Branch ${n} gross margin ${WHEN[q].en}: ${b.m[q]}%.` };
+  }
+  if (p && p !== 'today') {
+    const v = SALES[p](b);
+    return {
+      ar: { yesterday: `مبيعات فرع ${n} امبارح ${money(v)} جنيه.`, thisMonth: `مبيعات فرع ${n} من أول الشهر لحد دلوقتي ${money(v)} جنيه.`, lastMonth: `مبيعات فرع ${n} الشهر اللي فات ${money(v)} جنيه.` }[p],
+      en: `Branch ${n} sales ${WHEN[p].en}: ${egp(v)}.`,
+    };
+  }
   const extra = n === 4 ? '\nأغلب النقص في المشروبات، والمياه 1.5 لتر قربت تخلص.' : '';
   return {
     ar: `فرع ${n} لحد دلوقتي ${b.sales.toLocaleString('en-US')} جنيه، ${b.vs >= 0 ? 'أعلى' : 'أقل'} من متوسطه بـ ${Math.abs(b.vs)}%. الحالة: ${STATUS_AR[b.status]}.${extra}`,
     en: `Branch ${n} so far today: ${egp(b.sales)}, ${pct(b.vs)} vs its average. Status: ${b.status}.${n === 4 ? ' Most of the gap is drinks; 1.5 L water is running low.' : ''}`,
   };
+}
+// Best or worst branch by the figure that was asked about, for the period asked about.
+function rank(best, m, p) {
+  const ids = Object.keys(B).map(Number);
+  if (m === 'att' || m === 'returns') {
+    const n = 2; // most absences and the returns alert are both branch 2
+    const pre = p && p !== 'today' ? TODAY_ONLY : { ar: '', en: '' };
+    if (best) {
+      const r = m === 'att' ? { ar: 'أحسن حضور النهارده في فرع 3 وفرع 4: مفيش غياب.', en: 'Best attendance today: branches 3 and 4, nobody absent.' } : { ar: 'كل الفروع مرتجعاتها طبيعية النهارده ما عدا فرع 2.', en: 'Returns are normal today in every branch except branch 2.' };
+      return { ar: pre.ar + r.ar, en: pre.en + r.en, effect: { rows: m === 'att' ? [3, 4] : [2] } };
+    }
+    const r = m === 'att' ? { ar: 'أكتر غياب النهارده في فرع 2: 3 غياب.', en: 'Most absences today: branch 2, with 3 absent.' } : branchAnswer(2, 'returns');
+    return { ar: pre.ar + r.ar, en: pre.en + r.en, effect: { rows: [n] } };
+  }
+  const q = p || (m === 'margin' ? 'lastMonth' : 'today');
+  const val = m === 'margin' ? (b => b.m[q]) : SALES[q];
+  const sorted = ids.slice().sort((x, y) => val(B[y]) - val(B[x]));
+  const n = best ? sorted[0] : sorted[sorted.length - 1];
+  const v = val(B[n]);
+  const shown = m === 'margin' ? v + '%' : null;
+  const head = best ? { ar: 'أعلى', en: 'Best' } : { ar: 'أقل', en: 'Lowest' };
+  if (m === 'margin') return {
+    ar: `${head.ar} هامش ربح ${WHEN[q].ar} في فرع ${n}: ${shown}.`,
+    en: `${head.en} gross margin ${WHEN[q].en}: branch ${n}, ${shown}.`, effect: { rows: [n] },
+  };
+  if (q === 'today') {
+    const b = B[n];
+    return { ar: `${head.ar} فرع في المبيعات النهارده فرع ${n}: ${money(b.sales)} جنيه (${pct(b.vs)} عن متوسطه).${n === 4 ? '\nأغلب النقص في المشروبات، والمياه 1.5 لتر قربت تخلص.' : ''}`, en: `${head.en} sales today: branch ${n}, ${egp(b.sales)} (${pct(b.vs)} vs its average).${n === 4 ? ' Most of the gap is drinks; 1.5 L water is running low.' : ''}`, effect: { rows: [n] } };
+  }
+  return { ar: `${head.ar} فرع في المبيعات ${WHEN[q].ar} فرع ${n}: ${money(v)} جنيه.`, en: `${head.en} sales ${WHEN[q].en}: branch ${n}, ${egp(v)}.`, effect: { rows: [n] } };
+}
+// All six branches together for one period.
+function totalAnswer(m, p) {
+  const ids = Object.keys(B);
+  if (m === 'margin') {
+    const q = p || 'lastMonth';
+    const w = q === 'today' ? b => b.sales : SALES[q];
+    const avg = r1(ids.reduce((a, n) => a + B[n].m[q] * w(B[n]), 0) / ids.reduce((a, n) => a + w(B[n]), 0));
+    return { ar: `هامش الربح الإجمالي للست فروع ${WHEN[q].ar}: ${avg}%. اسألني عن أي فرع بالرقم.`, en: `Gross margin across the six branches ${WHEN[q].en}: ${avg}%. Ask about any branch by number.`, effect: { rows: ids.map(Number) } };
+  }
+  const q = p || 'today';
+  if (q === 'today') return { ar: `مبيعات النهارده لحد دلوقتي ${money(TODAY_TOTAL)} جنيه في الست فروع. اسألني عن أي فرع بالرقم.`, en: `Sales so far today: ${egp(TODAY_TOTAL)} across the six branches. Ask about any branch by number.`, effect: { kpis: ['k-sales'] } };
+  const v = ids.reduce((a, n) => a + SALES[q](B[n]), 0);
+  const extra = q === 'yesterday' ? { ar: ' (+6% عن متوسط الأسبوع)', en: ' (+6% vs the weekly average)' } : { ar: '', en: '' };
+  return { ar: `مبيعات الست فروع ${WHEN[q].ar}: ${money(v)} جنيه${extra.ar}. اسألني عن أي فرع بالرقم.`, en: `Sales across the six branches ${WHEN[q].en}: ${egp(v)}${extra.en}. Ask about any branch by number.`, effect: q === 'yesterday' ? { kpis: ['k-sales'] } : { rows: ids.map(Number) } };
 }
 
 function respond(raw, t) {
@@ -157,40 +257,65 @@ function respond(raw, t) {
     return [{ ar: 'تفاصيل مرتجعات فرع 2:\n• 14 مرتجع النهارده، المعتاد 4 أو 5\n• 11 منهم على كاشير 3 بعد الساعة 2\n• القيمة 6,350 جنيه\nبعتّ التفاصيل لمدير الفرع.', en: 'Branch 2 returns: 14 today against a usual 4 or 5; 11 on till 3 after 2 PM; EGP 6,350. Details sent to the branch manager.', effect: 'details' }];
   }
 
-  const list = branches(t);
+  let list = branches(t);
+  let m = metric(t);
+  let p = period(t);
+  let best = has(t, /احسن|اعلي|اكبر|اكتر فرع|\b(?:best|top|highest|most)\b/);
+  let worst = has(t, /اقل|اسوا|اضعف|اوحش|اصغر|\b(?:worst|lowest|least|weakest)\b/);
+  if (m === 'att' && (best || worst)) { // "most absences" is the worst attendance
+    worst = has(t, /اكتر|اكبر|اعلي|اسوا|اوحش|\b(?:most|highest|worst)\b/); best = !worst;
+  }
+  // Follow-ups such as "وامبارح؟", "and last month?" or "and branch 5?" keep the rest of the last question.
+  const otherTopic = has(t, /تنبيه|مشاكل|مشكله|alert|مخزون|نواقص|خلص|stock|reorder|ملخص|summary|شكرا|thanks/);
+  const followUp = S.ctx && !otherTopic && (has(t, /^\s*(?:و|طب|طيب|and\b|what about|how about)/) || (!list.length && !m && p));
+  if (followUp && !best && !worst && !list.length && S.ctx.rank) {
+    // "worst branch" then "and last month?" ranks again for the new period or figure.
+    best = S.ctx.rank === 'best'; worst = !best; m = m || S.ctx.m; p = p || S.ctx.p;
+  } else if (followUp && !best && !worst) {
+    if (!list.length && !m && p) list = S.ctx.list;
+    if (!m) m = S.ctx.m;
+    if (!p && list.length) p = S.ctx.p;
+  }
+  if (p === 'older' && (list.length || m || best || worst)) return [OLDER];
+
   if (list.length) {
     const bad = list.filter(n => !B[n]);
     if (bad.length) return [{ ar: `عندنا 6 فروع بس، من 1 لـ 6. فرع ${bad.join(' و')} مش موجود.`, en: `There are only 6 branches, 1 to 6. Branch ${bad.join(' and ')} does not exist.` }];
-    const m = metric(t); S.last = 'branch';
+    m = m || 'sales'; S.last = 'branch'; S.ctx = { list, m, p };
     if (list.length > 1) {
-      const rows = list.map(n => branchAnswer(n, m));
+      const rows = list.map(n => branchAnswer(n, m, p));
       return [{ ar: rows.map(r => r.ar).join('\n'), en: rows.map(r => r.en).join(' '), effect: { rows: list } }];
     }
-    return [{ ...branchAnswer(list[0], m), effect: { rows: list } }];
+    return [{ ...branchAnswer(list[0], m, p), effect: { rows: list } }];
   }
-  if (has(t, /احسن|اعلي|اكتر فرع|best|top/)) { S.last = 'branch'; return [{ ar: 'أعلى فرع النهارده فرع 1: 142,300 جنيه (+8%).', en: 'Best branch today: branch 1, EGP 142,300 (+8%).', effect: { rows: [1] } }]; }
-  if (has(t, /اقل|اسوا|اضعف|worst|lowest/)) { S.last = 'branch'; return [{ ...branchAnswer(4, 'sales'), effect: { rows: [4] } }]; }
-  if (has(t, /فرع|branch/)) return [{ ar: 'أنهي فرع؟ عندنا 6 فروع، من 1 لـ 6.', en: 'Which branch? There are six, numbered 1 to 6.' }];
+  if (best || worst) {
+    m = m || 'sales'; S.last = 'branch';
+    const r = rank(best && !worst, m, p);
+    S.ctx = { list: r.effect.rows.slice(0, 1), m, p, rank: best && !worst ? 'best' : 'worst' };
+    return [r];
+  }
+  if (has(t, /فرع|branch/) && !m && !p) return [{ ar: 'أنهي فرع؟ عندنا 6 فروع، من 1 لـ 6.', en: 'Which branch? There are six, numbered 1 to 6.' }];
+  if ((m === 'sales' || m === 'margin') || (followUp && S.ctx && !S.ctx.list.length && p)) {
+    m = m || S.ctx.m; S.last = null; S.ctx = { list: [], m, p };
+    return [totalAnswer(m, p)];
+  }
 
-  if (has(t, /ملخص|امبارح|مبارح|summary|yesterday/)) {
-    S.last = 'summary';
+  if (has(t, /ملخص|summary/) || (p === 'yesterday' && !m)) {
+    S.last = 'summary'; S.ctx = { list: [], m: 'sales', p: 'yesterday' };
     return [{ ar: 'ملخص امبارح:\n• المبيعات: 1.24 مليون جنيه (+6% عن متوسط الأسبوع)\n• 3 فروع من 6 فوق التارجت\n• الحضور: 95%', en: "Yesterday: sales EGP 1.24M (+6% vs the weekly average), 3 of 6 branches above target, attendance 95%.", effect: { kpis: ['k-sales', 'k-target'] } }];
   }
+  if (p === 'older') return [OLDER];
   if (has(t, /تنبيه|مشاكل|مشكله|حاجه غريبه|alert/)) {
     S.last = 'alerts';
     return [{ ar: '⚠️ مرتجعات فرع 2 النهارده 3 أضعاف المعتاد، أغلبها على كاشير واحد بعد الساعة 2. أبعتلك التفاصيل؟', en: 'Branch 2 returns are 3× normal today, mostly on one till after 2 PM. Want the details?', alert: true, effect: { rows: [2], alert: true } }];
   }
-  if (has(t, /غياب|غايب|حضور|attendance|absent/)) {
-    S.last = null;
+  if (has(t, /غياب|غايب|حضور|attendance|absen/)) {
+    S.last = null; S.ctx = { list: [], m: 'att', p: 'today' };
     return [{ ar: 'الحضور النهارده 96%. فيه 7 غياب: 3 في فرع 2، و2 في فرع 5، وواحد في فرع 1، وواحد في فرع 6. 4 منهم عندهم إجازة متسجلة.', en: 'Attendance today is 96%. 7 absent: 3 in branch 2, 2 in branch 5, 1 in branch 1, 1 in branch 6. Four have approved leave.', effect: { kpis: ['k-att'] } }];
   }
   if (has(t, /مخزون|نواقص|خلص|قرب يخلص|stock|reorder/)) {
     S.last = 'stock';
     return [{ ar: 'فيه 3 أصناف تحت حد الطلب:\n' + LOW.map(i => `• ${i.ar} في فرع ${i.branch}: فاضل ${i.left}، حد الطلب ${i.reorder}`).join('\n') + '\nأجهزلك طلب شراء ليهم؟', en: 'Three items are below reorder level: ' + LOW.map(i => `${i.en} in branch ${i.branch} (${i.left} left, reorder at ${i.reorder})`).join('; ') + '. Shall I prepare a purchase order?', effect: { rows: [4, 2, 6] } }];
-  }
-  if (has(t, /مبيعات|بيع|sales/)) {
-    S.last = null;
-    return [{ ar: 'مبيعات النهارده لحد دلوقتي 641,050 جنيه في الست فروع. اسألني عن أي فرع بالرقم.', en: 'Sales so far today: EGP 641,050 across the six branches. Ask about any branch by number.', effect: { kpis: ['k-sales'] } }];
   }
   if (has(t, /شكرا|thanks/)) return [{ ar: 'العفو 🙏', en: "You're welcome." }];
   return [{ ar: 'مش متأكد إني فهمت. جرّب تسأل عن فرع بالرقم (زي "فرع 3 هامش الربح")، أو عن الملخص، أو التنبيهات، أو الغياب، أو المخزون.', en: 'I am not sure I understood. Ask about a branch by number (for example "branch 3 margin"), or the summary, alerts, attendance or stock.' }];

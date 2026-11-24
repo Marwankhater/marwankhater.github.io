@@ -95,24 +95,52 @@ const MENU = {
 };
 const S = { cart: {}, pendingShawarma: 0, orders: [], nextId: 1042 };
 
-// Reads "2 شاورما فراخ وبطاطس" style requests. Returns {item: qty} and how many shawarmas had no type.
-function parseItems(t) {
-  const found = {}; let untyped = 0;
-  const add = (k, q) => { found[k] = (found[k] || 0) + q; };
-  const shawarma = new RegExp(NUM + '?\\s*(?:سندوتش|ساندوتش|سندويتش)?\\s*(?:شاورما|shawarma)\\s*(فراخ|فرخ|دجاج|chicken|لحمه|لحم|beef)?', 'g');
-  for (const m of t.matchAll(shawarma)) {
-    const q = num(m[1]) || 1;
-    if (!m[2]) untyped += q; else add(/فر|دجاج|chicken/.test(m[2]) ? 'chicken' : 'beef', q);
-  }
-  const rest = t.replace(shawarma, ' ');
-  const simple = [
-    ['chicken', '(?:فراخ|chicken)'], ['beef', '(?:لحمه|beef)'],
-    ['fries', '(?:بطاطس|بطاطا|فرايز|fries)'], ['pepsi', '(?:بيبسي|بيبس|كولا|pepsi)'],
-  ];
-  for (const [k, word] of simple) {
-    for (const m of rest.matchAll(new RegExp(NUM + '?\\s*' + word, 'g'))) add(k, num(m[1]) || 1);
-  }
-  return { found, untyped };
+// Reads "2 شاورما فراخ وبيبسي" or "2 chicken shawarma and a pepsi" word by word.
+// A number waits for the next item. A shawarma takes the type written right before or after it;
+// a type on its own ("فراخ") counts as a shawarma of that type and first answers any shawarmas
+// still waiting for a type (`open`, from this message or an earlier question).
+// Returns {found: {item: qty}, untyped, shawarma: true when the word shawarma appears}.
+const WORD = {
+  shawarma: /^(?:و|ب)?(?:ال)?(?:شاورما|شاورمه|شورما|shawarmas?|shawermas?)$/,
+  chicken: /^(?:و|ب)?(?:ال)?(?:فراخ|فرخه|دجاج|chicken)$/,
+  beef: /^(?:و|ب)?(?:ال)?(?:لحمه|لحم|beef|meat)$/,
+  fries: /^(?:و|ب)?(?:ال)?(?:بطاطس|بطاطا|فرايز|fries|chips)$/,
+  pepsi: /^(?:و|ب)?(?:ال)?(?:بيبسي|بيبس|كولا|pepsis?|cola|cokes?)$/,
+};
+const kindOf = w => Object.keys(WORD).find(k => WORD[k].test(w)) || null;
+const qtyOf = w => num(w) || (/^و./.test(w) && num(w.slice(1)));
+const isType = k => k === 'chicken' || k === 'beef';
+function parseItems(t, open = 0) {
+  const words = t.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  const found = {}; let untyped = 0; let q = null; let shawarma = false;
+  const held = new Set(); // type words waiting for the shawarma right after them
+  const used = new Set(); // type words already taken by the shawarma right before them
+  const add = (k, n) => { found[k] = (found[k] || 0) + n; };
+  const take = () => { const n = q; q = null; return n; };
+  words.forEach((w, i) => {
+    if (used.has(i)) return;
+    const dual = /^شاورمت(?:ين|ان)$/.test(w);
+    const k = dual ? 'shawarma' : kindOf(w);
+    if (!k) { const n = qtyOf(w); if (n) q = n; return; }
+    const next = kindOf(words[i + 1] || '');
+    if (k === 'shawarma') {
+      shawarma = true;
+      const n = (dual ? 2 : take()) || 1;
+      if (held.has(i - 1)) add(kindOf(words[i - 1]), n);
+      else if (isType(next)) { add(next, n); used.add(i + 1); }
+      else { untyped += n; open += n; }
+      return;
+    }
+    // "chicken shawarma": the number stays for the shawarma word right after.
+    if (isType(k) && (next === 'shawarma' || /^شاورمت/.test(words[i + 1] || ''))) { held.add(i); return; }
+    let n = take();
+    if (isType(k) && open > 0) {
+      if (!n) n = open; // "فراخ" alone answers every shawarma still waiting for a type
+      const answered = Math.min(n, open); open -= answered; untyped = Math.max(0, untyped - answered);
+    }
+    add(k, n || 1);
+  });
+  return { found, untyped, shawarma, open };
 }
 function cartLines() {
   return Object.entries(S.cart).filter(([, q]) => q > 0).map(([k, q]) => ({ k, q, price: q * MENU[k].price }));
@@ -127,18 +155,34 @@ function summary() {
 }
 const open = () => [...S.orders].reverse().find(o => o.status !== 'Delivered' && o.status !== 'Cancelled');
 
+const ask = (n, pre) => ({ ar: `${pre ? pre.ar + ' ' : ''}الـ ${n} شاورما: فراخ ولا لحمة؟`, en: `${pre ? pre.en + ' ' : ''}The ${n} shawarma${n > 1 ? 's' : ''}: chicken or beef?` });
+
 function respond(raw, t) {
   const wantsCancel = has(t, /الغي|لغي|كنسل|cancel/);
   const removes = has(t, /شيل|امسح|بلاش|من غير|remove/);
-  const { found, untyped } = parseItems(t);
+  const asksPrice = has(t, /بكام|بكم|سعر|اسعار|ثمن|how much|price|cost/);
+  const no = has(t, /(?:^|\s)(لا|لاء|no|nope|nah|مش عايز|مش عاوز|بلاش)(?=$|\s|[.!،,؟?])/);
+  const { found, untyped, shawarma, open: stillOpen } = parseItems(t, S.pendingShawarma);
   const items = Object.keys(found).length > 0;
 
+  // A price question answers prices and leaves the basket as it is.
+  if (asksPrice) {
+    const keys = Object.keys(found);
+    if (shawarma && !keys.some(isType)) keys.push('chicken', 'beef');
+    const asked = ['chicken', 'beef', 'fries', 'pepsi'].filter(k => keys.includes(k));
+    if (asked.length) return [{
+      ar: asked.map(k => `• ${MENU[k].ar}: ${MENU[k].price} ج`).join('\n') + (S.pendingShawarma ? `\nالـ ${S.pendingShawarma} شاورما تحبها فراخ ولا لحمة؟` : '\nتحب تطلب منها؟'),
+      en: asked.map(k => `${MENU[k].en} ${egp(MENU[k].price)}`).join(' · ') + (S.pendingShawarma ? `. The ${S.pendingShawarma} shawarma: chicken or beef?` : '. Would you like to order?'),
+    }];
+    if (cartLines().length) return [{ ar: 'حسابك لحد دلوقتي:\n' + summary().ar, en: 'Your basket so far: ' + summary().en }];
+  }
   if (removes && items) {
     Object.keys(found).forEach(k => delete S.cart[k]);
     if (!cartLines().length) return [{ ar: 'شيلتهم. السلة فاضية دلوقتي، تحب تطلب إيه؟', en: 'Removed. The basket is empty now. What would you like?' }];
     return [{ ar: 'تمام، شيلته.\n' + summary().ar, en: 'Done, removed. ' + summary().en }];
   }
   if (wantsCancel && !items) {
+    S.pendingShawarma = 0;
     if (cartLines().length) { S.cart = {}; return [{ ar: 'لغيت الطلب اللي كنا بنجهزه. تحب تطلب حاجة تانية؟', en: 'Cancelled the order we were building. Anything else?' }]; }
     const o = open();
     if (o && o.status === 'New') { o.status = 'Cancelled'; return [{ ar: `لغيت الأوردر #${o.id} قبل ما المطبخ يبدأ فيه.`, en: `Cancelled order #${o.id} before the kitchen started it.`, effect: { ticket: o } }]; }
@@ -146,20 +190,24 @@ function respond(raw, t) {
     return [{ ar: 'مفيش أوردر مفتوح دلوقتي.', en: 'There is no open order right now.' }];
   }
   if (items || untyped) {
-    // "فراخ" on its own answers the earlier "chicken or beef?" for all the shawarmas asked about.
-    const keys = Object.keys(found);
-    if (S.pendingShawarma && !untyped && keys.length === 1 && (found.chicken === 1 || found.beef === 1) && !/\d/.test(t)) {
-      found[keys[0]] = S.pendingShawarma;
-    }
-    S.pendingShawarma = 0;
     Object.entries(found).forEach(([k, q]) => { S.cart[k] = (S.cart[k] || 0) + q; });
-    if (untyped) {
-      S.pendingShawarma = untyped;
-      const pre = items ? 'سجلت الباقي. ' : '';
-      return [{ ar: `${pre}الـ ${untyped} شاورما: فراخ ولا لحمة؟`, en: `${items ? 'Got the rest. ' : ''}The ${untyped} shawarma: chicken or beef?` }];
-    }
+    S.pendingShawarma = stillOpen;
+    if (stillOpen) return [ask(stillOpen, items ? { ar: 'سجلت الباقي.', en: 'Got the rest.' } : null)];
     return [{ ar: 'تمام 👌\n' + summary().ar, en: 'Sure. ' + summary().en }];
   }
+  // "No" while a shawarma waits for its type drops it; "no" to the summary keeps the basket open.
+  if (no && S.pendingShawarma) {
+    const n = S.pendingShawarma; S.pendingShawarma = 0;
+    if (cartLines().length) return [{ ar: `تمام، مش هضيف الـ ${n} شاورما.\n` + summary().ar, en: `OK, I won't add the ${n} shawarma${n > 1 ? 's' : ''}. ` + summary().en }];
+    return [{ ar: 'تمام، من غير شاورما. تحب تطلب حاجة تانية؟', en: 'OK, no shawarma. Would you like anything else?' }];
+  }
+  if (no && cartLines().length) {
+    return [{ ar: 'تمام، مش هأكد لسه. تحب تزوّد أو تشيل إيه؟ أو قول "الغي" لو مش عايز الطلب.', en: 'OK, not confirmed yet. What would you like to add or remove? Or say "cancel" to drop the order.' }];
+  }
+  if (S.pendingShawarma && has(t, /(?:^|\s)(اه|ايوه|ايوا|اكد|تمام|موافق|ماشي|yes|ok|confirm)(?=$|\s|[.!،,؟?])/)) {
+    return [ask(S.pendingShawarma, { ar: 'محتاج أعرف النوع الأول.', en: 'I need the type first.' })];
+  }
+  if (no) return [{ ar: 'تمام. لو احتجت حاجة أنا هنا 🙏', en: 'OK. I am here if you need anything.' }];
   if (has(t, /(?:^|\s)(اه|ايوه|ايوا|اكد|تمام|موافق|ماشي|ابعته|yes|ok|confirm)(?=$|\s|[.!،,؟?])/)) {
     if (cartLines().length) {
       const o = { id: S.nextId++, lines: cartLines(), total: total(), status: 'New', at: time() };

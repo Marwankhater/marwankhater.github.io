@@ -24,6 +24,7 @@
   .view[hidden] { display: none; }
   .grid2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
   .panel .note { color: var(--muted); font-size: 13.5px; margin: 10px 0 0; }
+  .panel .note.warn { color: var(--warn); background: var(--warn-t); padding: 10px 12px; border-radius: 10px; }
   .bar { height: 8px; border-radius: 4px; background: #E6ECEA; overflow: hidden; min-width: 70px; }
   .bar i { display: block; height: 100%; background: var(--ok); }
   tr.weak td:first-child { box-shadow: inset 3px 0 0 var(--bad); }
@@ -140,6 +141,7 @@
         <thead><tr><th>Line</th><th>EGP</th><th>Based on</th></tr></thead>
         <tbody id="slip"></tbody>
       </table></div>
+      <p class="note warn" id="carry" role="status" hidden></p>
       <p class="note" id="employer"></p>
     </div>
     <div class="panel">
@@ -180,7 +182,7 @@
 </div></footer>
 <script>
 const $ = id => document.getElementById(id);
-const egp = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const egp = n => (Math.abs(n) < 0.005 ? 0 : n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /* Tabs: arrow keys move between them, as in any tab list. */
 const tabs = [...document.querySelectorAll('[role="tab"]')];
@@ -262,7 +264,7 @@ let synced = false;
 function renderDays() {
   $('days').innerHTML = PEOPLE.map(p => {
     const [label, c] = judge(p, synced);
-    return `<tr><td><button class="row-btn" type="button" data-id="${p.id}">${p.name}</button></td><td>${synced ? p.punches[0] || '—' : '—'}</td><td>${synced ? p.punches[1] || '—' : '—'}</td><td><span class="pill ${c}">${label}</span></td></tr>`;
+    return `<tr><td><button class="row-btn" type="button" data-id="${p.id}">${p.name}</button></td><td>${synced ? p.punches[0] || 'None' : '·'}</td><td>${synced ? p.punches[1] || 'None' : '·'}</td><td><span class="pill ${c}">${label}</span></td></tr>`;
   }).join('');
 }
 renderDays();
@@ -316,16 +318,26 @@ function payslip() {
   const taxable = gross - empIns;
   const tax = company ? grossedUp(taxable) : monthlyTax(taxable);
   const dayWage = Math.round(gross / 30 * 100) / 100, penalty = Math.round(dayWage * penaltyDays * 100) / 100;
-  const net = gross - empIns - (company ? 0 : tax) - penalty - advance;
+  // The advance is recovered only from what is left after the legal deductions; the rest waits for next month.
+  const due = Math.round((gross - empIns - (company ? 0 : tax) - penalty) * 100) / 100;
+  const recovered = Math.min(advance, Math.max(0, due));
+  const carried = Math.round((advance - recovered) * 100) / 100;
+  const net = Math.round((due - recovered) * 100) / 100;
   const rows = [
     ['Gross pay', gross, 'Contract'],
     ['Social insurance, employee 11%', -empIns, insured ? `11% of the insurance wage ${egp(insWage)}, kept between ${egp(INS.min)} and ${egp(INS.max)} (Law 148/2019, 2026 bounds)` : 'Not insured'],
     [company ? 'Income tax, paid by the company' : 'Income tax withheld', company ? 0 : -tax, company ? `${egp(tax)} paid by the company on top of pay. Because the company pays it, the tax is itself income, so the base is grossed up until it settles (Law 91/2005)` : 'The month annualised, less the EGP 20,000 exemption, taxed by the Law 7/2024 brackets, one twelfth withheld'],
     ['Lateness penalty', -penalty, `${penaltyDays} day(s) at ${egp(dayWage)} a day; capped at 5 days for one violation in a month (Labour Law 14/2025, Art. 143)`],
-    ['Advance recovered', -advance, 'Salary advance schedule'],
+    ['Advance recovered', -recovered, carried ? `${egp(advance)} due by the salary advance schedule; only what is left of this month's pay is taken` : 'Salary advance schedule'],
   ];
   $('slip').innerHTML = rows.map(([n, v, ref]) => `<tr><td>${n}</td><td>${egp(v)}</td><td class="ref">${ref}</td></tr>`).join('') +
     `<tr class="sum"><td>Net pay</td><td>${egp(net)}</td><td class="ref"></td></tr>`;
+  const carry = $('carry');
+  const short = due < 0 ? `The legal deductions are more than this month's pay, because insurance is due on at least the EGP ${egp(INS.min)} minimum insurance wage. ` : '';
+  const rest = !carried ? '' : recovered
+    ? `The advance is more than what is left of this month's pay, so EGP ${egp(recovered)} is recovered now and the remaining EGP ${egp(carried)} carries to next month's payslip.`
+    : `No advance is recovered this month; the full EGP ${egp(carried)} carries to next month's payslip.`;
+  carry.textContent = (short + rest).trim(); carry.hidden = !carry.textContent;
   $('employer').textContent = insured
     ? `The company also pays ${egp(erIns)} social insurance (18.75%)${company ? ` and ${egp(tax)} income tax` : ''}. Penalty days are capped at 5.`
     : `Not insured, so no social insurance on either side.${company ? ` The company pays ${egp(tax)} income tax.` : ''}`;
