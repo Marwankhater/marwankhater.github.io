@@ -1,4 +1,4 @@
-/* Demo pages. Same frame as the home page: deep navy with one gold accent; the ERP panels stay white like app windows. System fonts for Latin text; IBM Plex Sans Arabic only for the Arabic chat. */
+/* Demo pages. Same frame as the home page: deep blue-slate with one gold accent; the ERP panels stay white like app windows. System fonts for Latin text; IBM Plex Sans Arabic only for the Arabic chat. */
 @font-face { font-family: 'Plex Arabic'; font-weight: 400; font-display: swap; src: url(fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2) format('woff2'); unicode-range: U+0600-06FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE80-FEFC; }
 @font-face { font-family: 'Plex Arabic'; font-weight: 600; font-display: swap; src: url(fonts/ibm-plex-sans-arabic-arabic-600-normal.woff2) format('woff2'); unicode-range: U+0600-06FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE80-FEFC; }
 
@@ -7,7 +7,7 @@
   --ok: #087A5D; --ok-t: #E3F5EE; --warn: #9A5B00; --warn-t: #FFF3DC; --bad: #B42318; --bad-t: #FDECEC; --hl: #EAF6F2;
   --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --ar: 'Plex Arabic', "Segoe UI", Tahoma, sans-serif;
-  --bg: #0B1524; --page-ink: #F3F5F8; --page-body: #C2CBD6; --page-muted: #8F9CAD; --page-rule: #1F2E44; --gold: #C9A55F;
+  --bg: #10161F; --page-ink: #F3F4F5; --page-body: #C5CAD0; --page-muted: #949CA6; --page-rule: #242E3C; --gold: #C9A55F;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
