@@ -75,6 +75,8 @@ function fx(name) {
     li.innerHTML = '<span class="when">' + t + '</span><b>Order #1042</b> <span class="pill warn" id="st">New</span><div style="margin-top:6px;color:var(--muted)"></div>';
     li.querySelector('div').textContent = items.join(' · ') + ' · Delivery';
     document.getElementById('tickets').prepend(li);
+    // on phones the kitchen panel sits under the chat: bring the new ticket into view
+    if (innerWidth <= 900) setTimeout(() => li.scrollIntoView({ behavior: 'smooth', block: 'center' }), 600);
   }
   if (name === 'cooking') { const s = document.getElementById('st'); if (s) { s.textContent = 'Cooking'; s.className = 'pill ok'; } }
 }

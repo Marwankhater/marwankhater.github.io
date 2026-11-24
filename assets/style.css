@@ -79,7 +79,7 @@ img { max-width: 100%; display: block; }
 .tbl { overflow-x: auto; margin-top: 14px; }
 table { width: 100%; border-collapse: collapse; font-size: 14.5px; font-variant-numeric: tabular-nums; }
 th { text-align: left; color: var(--muted); font-weight: 600; font-size: 13px; padding: 8px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
-td { padding: 9px 10px; border-bottom: 1px solid var(--rule); }
+td { padding: 9px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
 tr:last-child td { border-bottom: 0; }
 tr.hl td, .kpi.hl { background: var(--hl); }
 .kpi.hl { border-color: var(--green); }
