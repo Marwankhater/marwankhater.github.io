@@ -50,6 +50,8 @@ img { max-width: 100%; display: block; }
 .m.in { align-self: flex-start; background: #fff; border-top-left-radius: 3px; }
 .m.out { align-self: flex-end; background: #D9FDD3; border-top-right-radius: 3px; }
 .m.alert { border-right: 4px solid #F59E0B; }
+.m .ar { display: block; }
+.m .en { display: block; direction: ltr; text-align: left; font: 400 12.5px/1.45 var(--sans); color: #54656F; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(0,0,0,.07); white-space: normal; }
 .m .t { display: block; font: 400 11.5px var(--sans); color: #667781; text-align: left; direction: ltr; margin-top: 1px; }
 .m.out .t::after { content: " ✓✓"; color: #53BDEB; }
 .typing { align-self: flex-start; background: #fff; border-radius: 10px; padding: 10px 12px; display: flex; gap: 4px; box-shadow: 0 1px 1px rgba(0,0,0,.1); }
@@ -102,3 +104,18 @@ footer.site .links a { display: inline-flex; align-items: center; min-height: 44
 @media (max-width: 900px) { .stage { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .nav { gap: 14px; font-size: 14.5px; } .screen { height: 560px; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; scroll-behavior: auto !important; } }
+
+/* Honest label above each demo, and the production notes under it */
+.scripted { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; padding: 12px 14px; border: 1px solid var(--page-rule); border-radius: 10px; font-size: 14.5px; color: var(--page-body); max-width: 720px; }
+.scripted b { color: var(--page-ink); }
+.how { margin: 0 0 56px; padding: 22px; border: 1px solid var(--page-rule); border-radius: 14px; max-width: 1080px; }
+.how h2 { margin: 0 0 4px; font-size: 19px; color: var(--page-ink); }
+.how > p { margin: 0 0 14px; color: var(--page-muted); font-size: 14.5px; }
+.how ol { margin: 0; padding-inline-start: 20px; display: grid; gap: 8px; }
+.how li { color: var(--page-body); }
+.how li b { color: var(--page-ink); }
+.how .split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.how h3 { margin: 0 0 8px; font-size: 15px; color: var(--gold); font-weight: 650; }
+.how ul { margin: 0; padding-inline-start: 18px; display: grid; gap: 6px; color: var(--page-body); }
+@media (max-width: 760px) { .how .split { grid-template-columns: 1fr; } }
+.events li.flash, tr.flash td { background: var(--hl); transition: background-color .6s; }

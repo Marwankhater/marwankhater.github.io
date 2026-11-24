@@ -26,7 +26,7 @@
   <a class="back" href="../../#demos">← All demos</a>
   <h1>WhatsApp AI agent for management</h1>
   <p>Management asks about any figure on WhatsApp and gets an answer read live from the ERP. They also get a morning summary and an alert as soon as something looks off. Try it: tap a question or type your own.</p>
-  <p class="notice">Demo with sample data. The real system runs at a client, so its data stays private.</p>
+  <p class="scripted"><span><b>Scripted demo with sample data.</b> It runs in your browser with simple rules, not the production model, so it understands questions about these six branches and a few topics. The real agent runs at a client, so its data stays private.</span></p>
 </div>
 <div class="stage">
   <div class="phone" id="phone"><div class="screen">
@@ -62,6 +62,30 @@
     </div>
   </div>
 </div>
+<section class="how" aria-labelledby="how-h">
+  <h2 id="how-h">How the production agent works</h2>
+  <p>The same conversation, with a language model and the company's ERP behind it.</p>
+  <div class="split">
+    <div>
+      <h3>One question, step by step</h3>
+      <ol>
+        <li>A manager's WhatsApp message reaches the agent through a webhook. Only registered numbers get an answer.</li>
+        <li>The model reads the question and picks what to look up: a branch's sales, attendance, stock or returns.</li>
+        <li>Figures are read live from the ERP. The model words the answer but never invents a number.</li>
+        <li>A morning summary goes out on a schedule, and an alert is sent as soon as a figure looks off.</li>
+        <li>Anything that changes data, like a purchase order, is shown first and created only after a yes, as a draft for approval.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>What this page shows</h3>
+      <ul>
+        <li>Any branch from 1 to 6, by number, with sales, margin, attendance or returns. Branch 7 gets "we only have 6".</li>
+        <li>The purchase order flow: low stock, a proposed order, then a draft only after you confirm.</li>
+        <li>The table on the right highlights exactly the rows each answer is about.</li>
+      </ul>
+    </div>
+  </div>
+</section>
 </main>
 <footer class="site"><div class="wrap">
   <span>Marwan Khater, Cairo, Egypt</span>
@@ -69,50 +93,145 @@
 </div></footer>
 <script src="../../assets/chat.js"></script>
 <script>
+const { has, num, NUM, egp, time } = DemoText;
+// Sample data. The numbers agree with the panel on the right.
+const B = {
+  1: { sales: 142300, vs: 8, status: 'On track', absent: 1, margin: 24.1 },
+  2: { sales: 118900, vs: 2, status: 'Returns high', absent: 3, margin: 21.8 },
+  3: { sales: 97450, vs: 4, status: 'On track', absent: 0, margin: 23.5 },
+  4: { sales: 86400, vs: -12, status: 'Below', absent: 0, margin: 19.2 },
+  5: { sales: 104800, vs: 1, status: 'On track', absent: 2, margin: 22.7 },
+  6: { sales: 91200, vs: -3, status: 'On track', absent: 1, margin: 22.0 },
+};
+const LOW = [
+  { ar: 'مياه 1.5 لتر', en: 'Water 1.5 L', branch: 4, left: 18, reorder: 60, qty: 240 },
+  { ar: 'زيت 1 لتر', en: 'Oil 1 L', branch: 2, left: 9, reorder: 30, qty: 120 },
+  { ar: 'سكر 1 كيلو', en: 'Sugar 1 kg', branch: 6, left: 22, reorder: 50, qty: 200 },
+];
+const S = { last: null, poDraft: false, po: null };
+const pct = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + '%';
+const STATUS_AR = { 'On track': 'ماشي كويس', 'Returns high': 'المرتجعات عالية', Below: 'أقل من المتوقع' };
+
+function branches(t) {
+  const out = new Set();
+  const re = new RegExp('(?:فرع|الفرع|branch)\\s*(?:رقم\\s*)?' + NUM, 'g');
+  for (const m of t.matchAll(re)) out.add(num(m[1]));
+  return [...out];
+}
+function metric(t) {
+  if (has(t, /غياب|غايب|حضور|موظف|attendance|absent/)) return 'att';
+  if (has(t, /هامش|ربح|مكسب|margin|profit/)) return 'margin';
+  if (has(t, /مرتجع|returns?/)) return 'returns';
+  return 'sales';
+}
+function branchAnswer(n, m) {
+  const b = B[n];
+  if (m === 'att') return { ar: `فرع ${n}: ${b.absent ? b.absent + ' غياب النهارده' : 'مفيش غياب النهارده'}.`, en: `Branch ${n}: ${b.absent ? b.absent + ' absent today' : 'nobody absent today'}.` };
+  if (m === 'margin') return { ar: `هامش الربح الإجمالي لفرع ${n} الشهر اللي فات ${b.margin}%.`, en: `Branch ${n} gross margin last month: ${b.margin}%.` };
+  if (m === 'returns') return n === 2
+    ? { ar: 'مرتجعات فرع 2 النهارده 3 أضعاف المعتاد: 14 مرتجع بـ 6,350 جنيه، 11 منهم على كاشير 3 بعد الساعة 2.', en: 'Branch 2 returns are 3× normal today: 14 returns worth EGP 6,350, 11 of them on till 3 after 2 PM.' }
+    : { ar: `مرتجعات فرع ${n} في المعدل الطبيعي النهارده.`, en: `Branch ${n} returns are normal today.` };
+  const extra = n === 4 ? '\nأغلب النقص في المشروبات، والمياه 1.5 لتر قربت تخلص.' : '';
+  return {
+    ar: `فرع ${n} لحد دلوقتي ${b.sales.toLocaleString('en-US')} جنيه، ${b.vs >= 0 ? 'أعلى' : 'أقل'} من متوسطه بـ ${Math.abs(b.vs)}%. الحالة: ${STATUS_AR[b.status]}.${extra}`,
+    en: `Branch ${n} so far today: ${egp(b.sales)}, ${pct(b.vs)} vs its average. Status: ${b.status}.${n === 4 ? ' Most of the gap is drinks; 1.5 L water is running low.' : ''}`,
+  };
+}
+
+function respond(raw, t) {
+  const yes = has(t, /(?:^|\s)(اه|ايوه|ايوا|تمام|ماشي|اكد|موافق|ابعت|جهز|yes|ok|confirm)(?=$|\s|[.!،,؟?])/);
+  const no = has(t, /(?:^|\s)(لا|لأ|مش دلوقتي|بلاش|no)(?=$|\s|[.!،,؟?])/);
+
+  if (S.last === 'po-confirm' && (yes || no)) {
+    S.last = null;
+    if (no) { S.poDraft = false; return [{ ar: 'تمام، مش هعمل الطلب.', en: 'OK, no purchase order.' }]; }
+    S.po = 'PO-0457';
+    return [{ ar: `✅ اتعمل طلب شراء ${S.po} كمسودة في السيستم، مستني موافقة مدير المشتريات. مفيش حاجة اتبعتت للمورد.`, en: `Purchase order ${S.po} created as a draft in the ERP, waiting for the purchasing manager's approval. Nothing was sent to the supplier.`, effect: 'po' }];
+  }
+  if (S.last === 'stock' && yes) {
+    S.last = 'po-confirm'; S.poDraft = true;
+    return [{ ar: 'ده الطلب اللي هعمله:\n' + LOW.map(i => `• ${i.ar} لفرع ${i.branch}: ${i.qty}`).join('\n') + '\nأأكد وأعمله في السيستم؟', en: 'Draft: ' + LOW.map(i => `${i.en} for branch ${i.branch}: ${i.qty}`).join(' · ') + '. Confirm and create it in the ERP?' }];
+  }
+  if (S.last === 'alerts' && (yes || has(t, /تفاصيل|details/))) {
+    S.last = null;
+    return [{ ar: 'تفاصيل مرتجعات فرع 2:\n• 14 مرتجع النهارده، المعتاد 4 أو 5\n• 11 منهم على كاشير 3 بعد الساعة 2\n• القيمة 6,350 جنيه\nبعتّ التفاصيل لمدير الفرع.', en: 'Branch 2 returns: 14 today against a usual 4 or 5; 11 on till 3 after 2 PM; EGP 6,350. Details sent to the branch manager.', effect: 'details' }];
+  }
+
+  const list = branches(t);
+  if (list.length) {
+    const bad = list.filter(n => !B[n]);
+    if (bad.length) return [{ ar: `عندنا 6 فروع بس، من 1 لـ 6. فرع ${bad.join(' و')} مش موجود.`, en: `There are only 6 branches, 1 to 6. Branch ${bad.join(' and ')} does not exist.` }];
+    const m = metric(t); S.last = 'branch';
+    if (list.length > 1) {
+      const rows = list.map(n => branchAnswer(n, m));
+      return [{ ar: rows.map(r => r.ar).join('\n'), en: rows.map(r => r.en).join(' '), effect: { rows: list } }];
+    }
+    return [{ ...branchAnswer(list[0], m), effect: { rows: list } }];
+  }
+  if (has(t, /احسن|اعلي|اكتر فرع|best|top/)) { S.last = 'branch'; return [{ ar: 'أعلى فرع النهارده فرع 1: 142,300 جنيه (+8%).', en: 'Best branch today: branch 1, EGP 142,300 (+8%).', effect: { rows: [1] } }]; }
+  if (has(t, /اقل|اسوا|اضعف|worst|lowest/)) { S.last = 'branch'; return [{ ...branchAnswer(4, 'sales'), effect: { rows: [4] } }]; }
+  if (has(t, /فرع|branch/)) return [{ ar: 'أنهي فرع؟ عندنا 6 فروع، من 1 لـ 6.', en: 'Which branch? There are six, numbered 1 to 6.' }];
+
+  if (has(t, /ملخص|امبارح|مبارح|summary|yesterday/)) {
+    S.last = 'summary';
+    return [{ ar: 'ملخص امبارح:\n• المبيعات: 1.24 مليون جنيه (+6% عن متوسط الأسبوع)\n• 3 فروع من 6 فوق التارجت\n• الحضور: 95%', en: "Yesterday: sales EGP 1.24M (+6% vs the weekly average), 3 of 6 branches above target, attendance 95%.", effect: { kpis: ['k-sales', 'k-target'] } }];
+  }
+  if (has(t, /تنبيه|مشاكل|مشكله|حاجه غريبه|alert/)) {
+    S.last = 'alerts';
+    return [{ ar: '⚠️ مرتجعات فرع 2 النهارده 3 أضعاف المعتاد، أغلبها على كاشير واحد بعد الساعة 2. أبعتلك التفاصيل؟', en: 'Branch 2 returns are 3× normal today, mostly on one till after 2 PM. Want the details?', alert: true, effect: { rows: [2], alert: true } }];
+  }
+  if (has(t, /غياب|غايب|حضور|attendance|absent/)) {
+    S.last = null;
+    return [{ ar: 'الحضور النهارده 96%. فيه 7 غياب: 3 في فرع 2، و2 في فرع 5، وواحد في فرع 1، وواحد في فرع 6. 4 منهم عندهم إجازة متسجلة.', en: 'Attendance today is 96%. 7 absent: 3 in branch 2, 2 in branch 5, 1 in branch 1, 1 in branch 6. Four have approved leave.', effect: { kpis: ['k-att'] } }];
+  }
+  if (has(t, /مخزون|نواقص|خلص|قرب يخلص|stock|reorder/)) {
+    S.last = 'stock';
+    return [{ ar: 'فيه 3 أصناف تحت حد الطلب:\n' + LOW.map(i => `• ${i.ar} في فرع ${i.branch}: فاضل ${i.left}، حد الطلب ${i.reorder}`).join('\n') + '\nأجهزلك طلب شراء ليهم؟', en: 'Three items are below reorder level: ' + LOW.map(i => `${i.en} in branch ${i.branch} (${i.left} left, reorder at ${i.reorder})`).join('; ') + '. Shall I prepare a purchase order?', effect: { rows: [4, 2, 6] } }];
+  }
+  if (has(t, /مبيعات|بيع|sales/)) {
+    S.last = null;
+    return [{ ar: 'مبيعات النهارده لحد دلوقتي 641,050 جنيه في الست فروع. اسألني عن أي فرع بالرقم.', en: 'Sales so far today: EGP 641,050 across the six branches. Ask about any branch by number.', effect: { kpis: ['k-sales'] } }];
+  }
+  if (has(t, /شكرا|thanks/)) return [{ ar: 'العفو 🙏', en: "You're welcome." }];
+  return [{ ar: 'مش متأكد إني فهمت. جرّب تسأل عن فرع بالرقم (زي "فرع 3 هامش الربح")، أو عن الملخص، أو التنبيهات، أو الغياب، أو المخزون.', en: 'I am not sure I understood. Ask about a branch by number (for example "branch 3 margin"), or the summary, alerts, attendance or stock.' }];
+}
+
+function chips() {
+  if (S.last === 'po-confirm') return [{ ar: 'أيوه، أكّد', en: 'Yes, confirm' }, { ar: 'لا، مش دلوقتي', en: 'No, not now' }];
+  if (S.last === 'stock') return [{ ar: 'أيوه، جهّزه', en: 'Yes, prepare it' }, { ar: 'فرع 4 عامل إيه؟', en: 'How is branch 4 doing?' }];
+  if (S.last === 'alerts') return [{ ar: 'أيوه، ابعت التفاصيل', en: 'Yes, send the details' }, { ar: 'مين غايب النهارده؟', en: 'Who is absent today?' }];
+  return [
+    { ar: 'ابعتلي ملخص امبارح', en: "Send me yesterday's summary" },
+    { ar: 'فرع 4 عامل إيه النهارده؟', en: 'How is branch 4 doing today?' },
+    { ar: 'في أي تنبيهات النهارده؟', en: 'Any alerts today?' },
+    { ar: 'إيه الأصناف اللي قربت تخلص؟', en: 'Which items are running low?' },
+  ];
+}
 
 function hl(ids) {
   document.querySelectorAll('.hl').forEach(e => e.classList.remove('hl'));
-  ids.forEach(id => { const e = document.getElementById(id); if (e) { e.classList.add('hl'); e.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } });
+  ids.forEach((id, i) => { const e = document.getElementById(id); if (e) { e.classList.add('hl'); if (i === 0) e.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } });
 }
 function log(title, text) {
   const li = document.createElement('li');
-  const t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  li.innerHTML = '<span class="when">' + t + '</span><b></b> ';
+  li.innerHTML = '<span class="when"></span><b></b> ';
+  li.querySelector('.when').textContent = time();
   li.querySelector('b').textContent = title; li.append(text);
+  li.classList.add('flash');
   document.getElementById('alerts').prepend(li);
 }
-function fx(name) {
-  if (name === 'summary') hl(['k-sales', 'k-target']);
-  if (name === 'branch4') hl(['b4']);
-  if (name === 'attendance') hl(['k-att']);
-  if (name === 'alert') { hl(['b2']); log('Returns alert', 'Branch 2 · 3× the usual returns'); }
-  if (name === 'stock') { hl(['b4', 'b2', 'b6']); log('Low stock', '3 items below reorder level'); }
+function fx(e) {
+  if (e === 'po') { hl([]); log('Purchase order PO-0457', 'drafted in the ERP, waiting for approval'); return; }
+  if (e === 'details') { log('Returns details', 'sent to the branch 2 manager'); return; }
+  if (e.rows) hl(e.rows.map(n => 'b' + n));
+  if (e.kpis) hl(e.kpis);
+  if (e.alert) log('Returns alert', 'Branch 2 · 3× the usual returns');
 }
+
 mountChat(document.getElementById('phone'), {
   day: 'Today',
-  intro: [{ text: 'صباح الخير 👋 أنا مساعد العمليات. اسألني عن أي رقم في السيستم، أو اختار سؤال من تحت.', delay: 700 }],
-  start: ['summary', 'branch4', 'alerts', 'attendance'],
-  flows: {
-    summary: { user: 'ابعتلي ملخص امبارح', next: ['branch4', 'alerts', 'stock'],
-      replies: [{ text: 'ملخص امبارح:\n• المبيعات: 1.24 مليون جنيه (+6% عن متوسط الأسبوع)\n• 3 فروع من 6 فوق التارجت\n• نسبة الحضور: 95%', effect: 'summary' }] },
-    branch4: { user: 'فرع 4 عامل إيه النهارده؟', next: ['stock', 'alerts', 'attendance'],
-      replies: [{ text: 'فرع 4 لحد دلوقتي 86,400 جنيه، أقل من متوسطه بـ 12%. أغلب النقص في المشروبات، ومخزونها قرّب يخلص.', effect: 'branch4' }] },
-    alerts: { user: 'في أي تنبيهات النهارده؟', next: ['branch4', 'summary'],
-      replies: [{ text: '⚠️ مرتجعات فرع 2 النهارده 3 أضعاف المعتاد، أغلبها من كاشير واحد بعد الساعة 2. أبعتلك التفاصيل؟', alert: true, effect: 'alert' }] },
-    attendance: { user: 'مين غايب النهارده؟', next: ['summary', 'branch4'],
-      replies: [{ text: 'الحضور النهارده 96%. فيه 7 غياب: 3 في فرع 2، و2 في فرع 5، وواحد في فرع 1 وواحد في فرع 6. 4 منهم عندهم إجازة متسجلة.', effect: 'attendance' }] },
-    stock: { user: 'إيه الأصناف اللي قربت تخلص؟', next: ['alerts', 'summary'],
-      replies: [{ text: 'في 3 أصناف تحت حد الطلب:\n• مياه 1.5 لتر في فرع 4\n• زيت 1 لتر في فرع 2\n• سكر 1 كيلو في فرع 6\nأجهزلك طلب شراء ليهم؟', effect: 'stock' }] },
-  },
-  keywords: [
-    { re: /ملخص|امبارح|إمبارح|summary/i, flow: 'summary' },
-    { re: /فرع|branch/i, flow: 'branch4' },
-    { re: /تنبيه|مشكل|alert/i, flow: 'alerts' },
-    { re: /غياب|غايب|حضور|attendance/i, flow: 'attendance' },
-    { re: /مخزون|خلص|stock|نواقص/i, flow: 'stock' },
-  ],
-  fallback: 'ده ديمو ببيانات مثال، فبيفهم شوية أسئلة بس. جرّب سؤال من الاقتراحات 👇',
-  onEffect: fx,
+  intro: [{ ar: 'صباح الخير 👋 أنا مساعد العمليات. اسألني عن أي رقم في السيستم، أو اختار سؤال من تحت.', en: "Good morning. I'm the operations assistant. Ask me about any figure in the system, or pick a question below.", delay: 700 }],
+  respond, chips, onEffect: fx,
 });
 </script>
 </body>

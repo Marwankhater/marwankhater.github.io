@@ -26,7 +26,7 @@
   <a class="back" href="../../#demos">← All demos</a>
   <h1>AI ordering agent for a restaurant</h1>
   <p>Customers order on WhatsApp in plain Arabic. The agent confirms the items, total and address, then sends the order straight to the kitchen screen. Try placing an order.</p>
-  <p class="notice">Demo with sample data. The real system runs at a client, so its data stays private.</p>
+  <p class="scripted"><span><b>Scripted demo with sample data.</b> It runs in your browser with simple rules, not the production model, so it understands orders from this menu and a few questions. The real agent runs at a client, so its data stays private.</span></p>
 </div>
 <div class="stage">
   <div class="phone" id="phone"><div class="screen">
@@ -56,6 +56,29 @@
     </div>
   </div>
 </div>
+<section class="how" aria-labelledby="how-h">
+  <h2 id="how-h">How the production agent works</h2>
+  <p>The same conversation, with a language model and the restaurant's own system behind it.</p>
+  <div class="split">
+    <div>
+      <h3>One message, step by step</h3>
+      <ol>
+        <li>The customer's WhatsApp message reaches the agent through a webhook.</li>
+        <li>The model reads it with the conversation so far and decides what is needed: the menu, a price, a new order or an order's status.</li>
+        <li>Prices and totals come from the menu data in code, never from the model's own arithmetic.</li>
+        <li>Nothing reaches the kitchen until the customer confirms the summary. Then the order is created and shows up on the kitchen screen.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>What this page shows</h3>
+      <ul>
+        <li>Quantities and items are read from what you type, including "شيل" to remove and "الغي" to cancel.</li>
+        <li>The kitchen ticket always matches the confirmed basket, and the status moves New, Cooking, Out for delivery, Delivered.</li>
+        <li>Every reply carries an English line under the Arabic.</li>
+      </ul>
+    </div>
+  </div>
+</section>
 </main>
 <footer class="site"><div class="wrap">
   <span>Marwan Khater, Cairo, Egypt</span>
@@ -63,51 +86,145 @@
 </div></footer>
 <script src="../../assets/chat.js"></script>
 <script>
+const { has, num, NUM, egp, time } = DemoText;
+const MENU = {
+  chicken: { ar: 'شاورما فراخ', en: 'Chicken shawarma', price: 85 },
+  beef: { ar: 'شاورما لحمة', en: 'Beef shawarma', price: 110 },
+  fries: { ar: 'بطاطس كبيرة', en: 'Large fries', price: 45 },
+  pepsi: { ar: 'بيبسي', en: 'Pepsi', price: 20 },
+};
+const S = { cart: {}, pendingShawarma: 0, orders: [], nextId: 1042 };
 
-let items = [];
-function fx(name) {
-  if (name === 'new') items = ['2× Chicken shawarma', '1× Large fries'];
-  if (name === 'pepsi') items.push('1× Pepsi');
-  if (name === 'ticket') {
-    document.getElementById('noTickets').hidden = true;
-    const li = document.createElement('li'); li.id = 't1042';
-    const t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    li.innerHTML = '<span class="when">' + t + '</span><b>Order #1042</b> <span class="pill warn" id="st">New</span><div style="margin-top:6px;color:var(--muted)"></div>';
-    li.querySelector('div').textContent = items.join(' · ') + ' · Delivery';
-    document.getElementById('tickets').prepend(li);
-    // on phones the kitchen panel sits under the chat: bring the new ticket into view
-    if (innerWidth <= 900) setTimeout(() => li.scrollIntoView({ behavior: 'smooth', block: 'center' }), 600);
+// Reads "2 شاورما فراخ وبطاطس" style requests. Returns {item: qty} and how many shawarmas had no type.
+function parseItems(t) {
+  const found = {}; let untyped = 0;
+  const add = (k, q) => { found[k] = (found[k] || 0) + q; };
+  const shawarma = new RegExp(NUM + '?\\s*(?:سندوتش|ساندوتش|سندويتش)?\\s*(?:شاورما|shawarma)\\s*(فراخ|فرخ|دجاج|chicken|لحمه|لحم|beef)?', 'g');
+  for (const m of t.matchAll(shawarma)) {
+    const q = num(m[1]) || 1;
+    if (!m[2]) untyped += q; else add(/فر|دجاج|chicken/.test(m[2]) ? 'chicken' : 'beef', q);
   }
-  if (name === 'cooking') { const s = document.getElementById('st'); if (s) { s.textContent = 'Cooking'; s.className = 'pill ok'; } }
+  const rest = t.replace(shawarma, ' ');
+  const simple = [
+    ['chicken', '(?:فراخ|chicken)'], ['beef', '(?:لحمه|beef)'],
+    ['fries', '(?:بطاطس|بطاطا|فرايز|fries)'], ['pepsi', '(?:بيبسي|بيبس|كولا|pepsi)'],
+  ];
+  for (const [k, word] of simple) {
+    for (const m of rest.matchAll(new RegExp(NUM + '?\\s*' + word, 'g'))) add(k, num(m[1]) || 1);
+  }
+  return { found, untyped };
 }
+function cartLines() {
+  return Object.entries(S.cart).filter(([, q]) => q > 0).map(([k, q]) => ({ k, q, price: q * MENU[k].price }));
+}
+function total() { return cartLines().reduce((a, l) => a + l.price, 0); }
+function summary() {
+  const lines = cartLines();
+  return {
+    ar: lines.map(l => `${l.q} ${MENU[l.k].ar}: ${l.price} ج`).join('\n') + `\nالإجمالي ${total()} ج. أأكد الأوردر على عنوانك المسجل؟`,
+    en: lines.map(l => `${l.q}× ${MENU[l.k].en}: ${egp(l.price)}`).join(' · ') + `. Total ${egp(total())}. Shall I confirm it to your saved address?`,
+  };
+}
+const open = () => [...S.orders].reverse().find(o => o.status !== 'Delivered' && o.status !== 'Cancelled');
+
+function respond(raw, t) {
+  const wantsCancel = has(t, /الغي|لغي|كنسل|cancel/);
+  const removes = has(t, /شيل|امسح|بلاش|من غير|remove/);
+  const { found, untyped } = parseItems(t);
+  const items = Object.keys(found).length > 0;
+
+  if (removes && items) {
+    Object.keys(found).forEach(k => delete S.cart[k]);
+    if (!cartLines().length) return [{ ar: 'شيلتهم. السلة فاضية دلوقتي، تحب تطلب إيه؟', en: 'Removed. The basket is empty now. What would you like?' }];
+    return [{ ar: 'تمام، شيلته.\n' + summary().ar, en: 'Done, removed. ' + summary().en }];
+  }
+  if (wantsCancel && !items) {
+    if (cartLines().length) { S.cart = {}; return [{ ar: 'لغيت الطلب اللي كنا بنجهزه. تحب تطلب حاجة تانية؟', en: 'Cancelled the order we were building. Anything else?' }]; }
+    const o = open();
+    if (o && o.status === 'New') { o.status = 'Cancelled'; return [{ ar: `لغيت الأوردر #${o.id} قبل ما المطبخ يبدأ فيه.`, en: `Cancelled order #${o.id} before the kitchen started it.`, effect: { ticket: o } }]; }
+    if (o) return [{ ar: `الأوردر #${o.id} المطبخ بدأ فيه بالفعل، فمقدرش ألغيه من هنا. هحوّلك لخدمة العملاء.`, en: `The kitchen has already started order #${o.id}, so I can't cancel it here. I'll pass you to customer service.` }];
+    return [{ ar: 'مفيش أوردر مفتوح دلوقتي.', en: 'There is no open order right now.' }];
+  }
+  if (items || untyped) {
+    // "فراخ" on its own answers the earlier "chicken or beef?" for all the shawarmas asked about.
+    const keys = Object.keys(found);
+    if (S.pendingShawarma && !untyped && keys.length === 1 && (found.chicken === 1 || found.beef === 1) && !/\d/.test(t)) {
+      found[keys[0]] = S.pendingShawarma;
+    }
+    S.pendingShawarma = 0;
+    Object.entries(found).forEach(([k, q]) => { S.cart[k] = (S.cart[k] || 0) + q; });
+    if (untyped) {
+      S.pendingShawarma = untyped;
+      const pre = items ? 'سجلت الباقي. ' : '';
+      return [{ ar: `${pre}الـ ${untyped} شاورما: فراخ ولا لحمة؟`, en: `${items ? 'Got the rest. ' : ''}The ${untyped} shawarma: chicken or beef?` }];
+    }
+    return [{ ar: 'تمام 👌\n' + summary().ar, en: 'Sure. ' + summary().en }];
+  }
+  if (has(t, /(?:^|\s)(اه|ايوه|ايوا|اكد|تمام|موافق|ماشي|ابعته|yes|ok|confirm)(?=$|\s|[.!،,؟?])/)) {
+    if (cartLines().length) {
+      const o = { id: S.nextId++, lines: cartLines(), total: total(), status: 'New', at: time() };
+      S.orders.push(o); S.cart = {};
+      return [{ ar: `✅ الأوردر #${o.id} اتبعت للمطبخ. الإجمالي ${o.total} ج، وهيوصلك خلال 35 دقيقة.`, en: `Order #${o.id} sent to the kitchen. Total ${egp(o.total)}, arriving in about 35 minutes.`, effect: { ticket: o } }];
+    }
+    if (open()) return [{ ar: 'العفو 🙏 لو عايز تعرف الأوردر وصل لفين اسألني في أي وقت.', en: "You're welcome. Ask me any time where the order is." }];
+    return [{ ar: 'السلة لسه فاضية. تحب تطلب إيه؟', en: 'The basket is still empty. What would you like to order?' }];
+  }
+  if (has(t, /فين|وصل|اتاخر|اتأخر|الاوردر|الطلب|status|where/)) {
+    const o = open();
+    if (!o) return [{ ar: 'مفيش أوردر مفتوح باسمك دلوقتي.', en: 'You have no open order right now.' }];
+    const next = { New: 'Cooking', Cooking: 'Out for delivery', 'Out for delivery': 'Delivered' }[o.status];
+    o.status = next;
+    const text = {
+      Cooking: ['الأوردر بيتجهز في المطبخ دلوقتي، وهيخرج مع المندوب خلال 15 دقيقة.', 'It is being cooked now and leaves with the driver in about 15 minutes.'],
+      'Out for delivery': ['الأوردر خرج مع المندوب، وهيوصلك خلال 10 دقايق.', 'It is out with the driver and arrives in about 10 minutes.'],
+      Delivered: ['المندوب سجّل إن الأوردر اتسلّم. بالهنا والشفا 😊', 'The driver marked it as delivered. Enjoy your meal.'],
+    }[next];
+    return [{ ar: text[0], en: text[1], effect: { ticket: o } }];
+  }
+  if (has(t, /منيو|المنيو|عندكم ايه|اسعار|بكام|menu|price/)) {
+    return [{ ar: 'المنيو:\n' + Object.values(MENU).map(m => `• ${m.ar}: ${m.price} ج`).join('\n'), en: 'Menu: ' + Object.values(MENU).map(m => `${m.en} ${egp(m.price)}`).join(' · ') }];
+  }
+  if (has(t, /تقفل|بتقفلوا|مفتوح|مواعيد|open|hours/)) return [{ ar: 'مفتوحين كل يوم من 12 الظهر لحد 2 بالليل.', en: 'Open every day from noon to 2 AM.' }];
+  if (has(t, /شكرا|متشكر|thanks|thank/)) return [{ ar: 'العفو، في خدمتك 🙏', en: "You're welcome." }];
+  if (has(t, /اهلا|السلام|هاي|hello|hi\b/)) return [{ ar: 'أهلاً بيك 👋 تحب تطلب إيه؟', en: 'Hi! What would you like to order?' }];
+  return [{ ar: 'مش متأكد إني فهمت. ممكن تكتب الطلب بالكمية والصنف، زي "2 شاورما لحمة وبيبسي"، أو تسأل عن المنيو.', en: 'I am not sure I understood. Write the order with quantity and item, for example "2 beef shawarma and a Pepsi", or ask for the menu.' }];
+}
+
+function chips() {
+  if (S.pendingShawarma) return [{ ar: 'فراخ', en: 'Chicken' }, { ar: 'لحمة', en: 'Beef' }];
+  if (cartLines().length) {
+    const last = cartLines()[cartLines().length - 1].k;
+    const removeWord = { chicken: 'الفراخ', beef: 'اللحمة', fries: 'البطاطس', pepsi: 'البيبسي' }[last];
+    const out = [{ ar: 'أيوه، أكّد', en: 'Yes, confirm' }];
+    if (!S.cart.pepsi) out.push({ ar: 'زوّد بيبسي', en: 'Add a Pepsi' });
+    out.push({ ar: 'شيل ' + removeWord, en: 'Remove the ' + MENU[last].en.toLowerCase() });
+    return out;
+  }
+  if (open()) return [{ ar: 'الأوردر وصل لفين؟', en: 'Where is my order?' }, { ar: 'الغي الأوردر', en: 'Cancel the order' }, { ar: 'شكراً', en: 'Thanks' }];
+  return [{ ar: 'عايز 2 شاورما فراخ وبطاطس كبيرة', en: 'Two chicken shawarma and large fries' }, { ar: 'إيه المنيو؟', en: "What's on the menu?" }, { ar: 'بتقفلوا إمتى؟', en: 'When do you close?' }];
+}
+
+const PILL = { New: 'warn', Cooking: 'ok', 'Out for delivery': 'ok', Delivered: 'ok', Cancelled: 'bad' };
+function fx(e) {
+  if (!e.ticket) return;
+  const o = e.ticket;
+  document.getElementById('noTickets').hidden = true;
+  let li = document.getElementById('t' + o.id);
+  const isNew = !li;
+  if (isNew) { li = document.createElement('li'); li.id = 't' + o.id; document.getElementById('tickets').prepend(li); }
+  li.innerHTML = '<span class="when"></span><b></b> <span class="pill"></span><div class="lines"></div>';
+  li.querySelector('.when').textContent = o.at;
+  li.querySelector('b').textContent = 'Order #' + o.id;
+  const pill = li.querySelector('.pill'); pill.textContent = o.status; pill.classList.add(PILL[o.status]);
+  li.querySelector('.lines').textContent = o.lines.map(l => `${l.q}× ${MENU[l.k].en}`).join(' · ') + ` · ${egp(o.total)} · Delivery`;
+  li.classList.add('flash'); setTimeout(() => li.classList.remove('flash'), 1200);
+  if (isNew && innerWidth <= 900) setTimeout(() => li.scrollIntoView({ behavior: 'smooth', block: 'center' }), 500);
+}
+
 mountChat(document.getElementById('phone'), {
   day: 'Today',
-  intro: [{ text: 'أهلاً بيك 👋 تحب تطلب إيه النهارده؟', delay: 700 }],
-  start: ['order', 'menu', 'hours'],
-  flows: {
-    menu: { user: 'إيه المنيو؟', next: ['order', 'hours'],
-      replies: [{ text: 'عندنا:\n• شاورما فراخ: 85 ج\n• شاورما لحمة: 110 ج\n• بطاطس كبيرة: 45 ج\n• بيبسي: 20 ج' }] },
-    hours: { user: 'بتقفلوا إمتى؟', next: ['order', 'menu'],
-      replies: [{ text: 'مفتوحين كل يوم من 12 الظهر لحد 2 بالليل.' }] },
-    order: { user: 'عايز 2 شاورما فراخ وبطاطس كبيرة', next: ['confirm', 'pepsi'], effect: 'new',
-      replies: [{ text: 'تمام 👌\n2 شاورما فراخ: 170 ج\nبطاطس كبيرة: 45 ج\nالإجمالي 215 ج. أبعته على عنوانك المسجل؟' }] },
-    pepsi: { user: 'زوّد بيبسي', next: ['confirm'], effect: 'pepsi',
-      replies: [{ text: 'اتزوّد بيبسي (20 ج). الإجمالي بقى 235 ج. أأكد الأوردر؟' }] },
-    confirm: { user: 'أيوه، أكّد', next: ['status'],
-      replies: [{ text: '✅ الأوردر #1042 اتبعت للمطبخ، وهيوصلك خلال 35 دقيقة.', effect: 'ticket' }] },
-    status: { user: 'الأوردر وصل لفين؟', next: ['order'],
-      replies: [{ text: 'الأوردر بيتجهز في المطبخ دلوقتي، وهيخرج مع المندوب خلال 15 دقيقة.', effect: 'cooking' }] },
-  },
-  keywords: [
-    { re: /منيو|menu|أسعار/i, flow: 'menu' },
-    { re: /تقفل|مفتوح|مواعيد/i, flow: 'hours' },
-    { re: /بيبسي|pepsi/i, flow: 'pepsi' },
-    { re: /أكد|اكد|تمام|أيوه|ايوه|confirm/i, flow: 'confirm' },
-    { re: /فين|وصل|status/i, flow: 'status' },
-    { re: /عايز|اطلب|أطلب|شاورما|order/i, flow: 'order' },
-  ],
-  fallback: 'ده ديمو ببيانات مثال، فبيفهم أوردرات المنيو اللي جنبك بس. جرّب من الاقتراحات 👇',
-  onEffect: fx,
+  intro: [{ ar: 'أهلاً بيك 👋 تحب تطلب إيه النهارده؟', en: 'Hi! What would you like to order today?', delay: 700 }],
+  respond, chips, onEffect: fx,
 });
 </script>
 </body>

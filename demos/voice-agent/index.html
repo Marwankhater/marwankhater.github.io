@@ -25,8 +25,8 @@
 <div class="demo-head">
   <a class="back" href="../../#demos">← All demos</a>
   <h1>Voice AI agent for customer calls</h1>
-  <p>The agent picks up customer calls, understands the request and answers from the business's own systems while the caller is on the line. Press "Start call" to watch a sample call.</p>
-  <p class="notice">Demo with sample data. The real system runs at a client, so its data stays private.</p>
+  <p>The agent picks up customer calls, understands the request and answers from the business's own systems while the caller is on the line. Press "Play sample call" to follow one call as a transcript.</p>
+  <p class="scripted"><span><b>Transcript of a sample call, with sample data.</b> There is no audio on this page: it replays the conversation and what the agent looks up. The real agent runs at a client, so its calls and data stay private.</span></p>
 </div>
 <div class="stage">
   <div class="phone"><div class="screen" style="background:#0F2A3A">
@@ -37,13 +37,13 @@
       <div id="wave" style="display:flex;align-items:center;gap:4px;height:38px;margin:14px 0 4px"></div>
     </div>
     <div class="chat" id="tr" style="background:none;padding:6px 12px 12px" aria-live="polite"></div>
-    <div style="padding:12px;display:flex;justify-content:center"><button class="btn primary" id="startCall" type="button">▶ Start call</button></div>
+    <div style="padding:12px;display:flex;justify-content:center"><button class="btn primary" id="startCall" type="button">▶ Play sample call</button></div>
   </div></div>
   <div>
     <div class="panel">
       <h2><span class="live"></span>What the agent looks up</h2>
       <p class="sub">Read from the business's system during the call. Sample data.</p>
-      <ul class="events" id="lookups"></ul><p class="empty" id="noLookups">Start the call to see it work.</p>
+      <ul class="events" id="lookups"></ul><p class="empty" id="noLookups">Play the call to see the lookup.</p>
     </div>
     <div class="panel">
       <h2>Call log</h2>
@@ -53,45 +53,76 @@
     </div>
   </div>
 </div>
+<section class="how" aria-labelledby="how-h">
+  <h2 id="how-h">How the production agent works</h2>
+  <p>A phone call, handled end to end while the caller waits.</p>
+  <div class="split">
+    <div>
+      <h3>One call, step by step</h3>
+      <ol>
+        <li>The call is answered by the voice agent. Speech is turned into text as the caller talks.</li>
+        <li>The model decides what the caller needs and asks for what is missing, like the order number.</li>
+        <li>The order is looked up in the business's system during the call, and the answer is read back in Egyptian Arabic.</li>
+        <li>Every call is logged with its topic and result, and anything the agent cannot handle goes to a person.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>What this page shows</h3>
+      <ul>
+        <li>The transcript of one sample call, with an English line under each turn.</li>
+        <li>The lookup the agent makes, and the call log row it writes when the call ends.</li>
+        <li>Replaying the call updates the same log row instead of adding another.</li>
+      </ul>
+    </div>
+  </div>
+</section>
 </main>
 <footer class="site"><div class="wrap">
   <span>Marwan Khater, Cairo, Egypt</span>
   <span class="links"><a href="mailto:marwanashraf410@gmail.com">Email</a><a href="https://wa.me/201202853088">WhatsApp</a><a href="https://www.linkedin.com/in/marwan-khater-811660219/">LinkedIn</a><a href="https://github.com/Marwankhater">GitHub</a></span>
 </div></footer>
+<script src="../../assets/chat.js"></script>
 <script>
 const wave = document.getElementById('wave');
 for (let i = 0; i < 28; i++) { const s = document.createElement('span'); s.style.cssText = 'width:4px;border-radius:3px;background:#9FE3CF;height:' + (8 + Math.round(24 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * .45)))) + 'px;transition:height .2s'; wave.append(s); }
 let anim = null;
 function animate(on) {
   clearInterval(anim);
-  if (on) anim = setInterval(() => wave.querySelectorAll('span').forEach(s => s.style.height = (6 + Math.random() * 30) + 'px'), 180);
+  if (on && !matchMedia('(prefers-reduced-motion: reduce)').matches) anim = setInterval(() => wave.querySelectorAll('span').forEach(s => s.style.height = (6 + Math.random() * 30) + 'px'), 180);
 }
+// [side, Arabic, English, speaker, effect]
 const lines = [
-  ['out', 'ألو، عايز أعرف الأوردر بتاعي وصل لفين؟', 'Caller'],
-  ['in', 'أهلاً بحضرتك. ممكن رقم الأوردر؟', 'AI agent'],
-  ['out', '1042', 'Caller', 'lookup'],
-  ['in', 'الأوردر خرج مع المندوب من 10 دقايق، وهيوصلك خلال ربع ساعة.', 'AI agent'],
-  ['out', 'تمام، شكراً', 'Caller'],
-  ['in', 'العفو، في خدمتك في أي وقت 🙏', 'AI agent', 'end'],
+  ['out', 'ألو، عايز أعرف الأوردر بتاعي وصل لفين؟', 'Hello, where is my order?', 'Caller'],
+  ['in', 'أهلاً بحضرتك. ممكن رقم الأوردر؟', 'Hello. Could I have the order number?', 'AI agent'],
+  ['out', '1042', '1042', 'Caller', 'lookup'],
+  ['in', 'الأوردر خرج مع المندوب من 10 دقايق، وهيوصلك خلال ربع ساعة.', 'It left with the driver 10 minutes ago and will reach you in about 15 minutes.', 'AI agent'],
+  ['out', 'تمام، شكراً', 'Great, thanks.', 'Caller'],
+  ['in', 'العفو، في خدمتك في أي وقت 🙏', "You're welcome, any time.", 'AI agent', 'end'],
 ];
 const tr = document.getElementById('tr'), btn = document.getElementById('startCall'), st = document.getElementById('callState');
-function bubble([k, txt, who]) {
+function bubble([k, ar, en, who]) {
   const m = document.createElement('div'); m.className = 'm ' + k;
   m.style.cssText = k === 'in' ? 'background:rgba(255,255,255,.1);color:#fff;box-shadow:none' : 'background:rgba(92,246,232,.16);color:#fff;box-shadow:none';
-  m.textContent = txt; const t = document.createElement('span'); t.className = 't'; t.style.color = 'rgba(255,255,255,.55)'; t.textContent = who; m.append(t);
+  const a = document.createElement('span'); a.className = 'ar'; a.textContent = ar; m.append(a);
+  if (en !== ar) { const e = document.createElement('span'); e.className = 'en'; e.style.cssText = 'color:rgba(255,255,255,.7);border-top-color:rgba(255,255,255,.15)'; e.textContent = en; m.append(e); }
+  const t = document.createElement('span'); t.className = 't'; t.style.color = 'rgba(255,255,255,.55)'; t.textContent = who; m.append(t);
   tr.append(m); tr.scrollTop = tr.scrollHeight;
 }
 function effect(name) {
-  const now = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const now = DemoText.time();
   if (name === 'lookup') {
     document.getElementById('noLookups').hidden = true;
-    const li = document.createElement('li'); li.innerHTML = '<span class="when">' + now + '</span><b>Order #1042</b> <span class="pill ok">Out for delivery</span><div style="margin-top:6px;color:var(--muted)">Left the kitchen 10 min ago · ETA 15 min</div>';
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="when"></span><b>Order #1042</b> <span class="pill ok">Out for delivery</span><div style="margin-top:6px;color:var(--muted)">Left the kitchen 10 min ago · ETA 15 min</div>';
+    li.querySelector('.when').textContent = now; li.classList.add('flash');
     document.getElementById('lookups').prepend(li);
   }
   if (name === 'end') {
-    const row = document.createElement('tr'); row.className = 'hl';
-    row.innerHTML = '<td>' + now + '</td><td>+20 1•• ••• 7730</td><td>Order status</td><td><span class="pill ok">Answered</span></td>';
-    document.getElementById('calls').prepend(row);
+    // One row for this sample call, updated on every replay instead of piling up.
+    let row = document.getElementById('demoCall');
+    if (!row) { row = document.createElement('tr'); row.id = 'demoCall'; document.getElementById('calls').prepend(row); }
+    row.innerHTML = '<td></td><td>+20 1•• ••• 7730</td><td>Order status</td><td><span class="pill ok">Answered</span></td>';
+    row.firstChild.textContent = now; row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 1200);
   }
 }
 btn.addEventListener('click', async () => {
@@ -99,7 +130,7 @@ btn.addEventListener('click', async () => {
   st.textContent = 'Connecting…'; await new Promise(r => setTimeout(r, 700));
   const start = Date.now(); const timer = setInterval(() => { const s = Math.floor((Date.now() - start) / 1000); st.textContent = 'On call · 0' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 500);
   animate(true);
-  for (const l of lines) { await new Promise(r => setTimeout(r, l[0] === 'in' ? 1500 : 1100)); bubble(l); if (l[3]) effect(l[3]); }
+  for (const l of lines) { await new Promise(r => setTimeout(r, l[0] === 'in' ? 1500 : 1100)); bubble(l); if (l[4]) effect(l[4]); }
   await new Promise(r => setTimeout(r, 900)); clearInterval(timer); animate(false); st.textContent = 'Call ended';
   btn.disabled = false; btn.textContent = '↻ Play again';
 });

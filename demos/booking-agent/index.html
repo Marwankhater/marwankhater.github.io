@@ -26,7 +26,7 @@
   <a class="back" href="../../#demos">← All demos</a>
   <h1>WhatsApp booking agent, connected to the ERP</h1>
   <p>The agent answers customers, offers the free slots and confirms the booking in the same chat. The booking is created in the ERP with no typing. Try booking a slot.</p>
-  <p class="notice">Demo with sample data. The real system runs at a client, so its data stays private.</p>
+  <p class="scripted"><span><b>Scripted demo with sample data.</b> It runs in your browser with simple rules, not the production model, so it understands days, times, changes and cancellations for this schedule. The real agent runs at a client, so its data stays private.</span></p>
 </div>
 <div class="stage">
   <div class="phone" id="phone"><div class="screen">
@@ -38,7 +38,7 @@
   <div>
     <div class="panel">
       <h2><span class="live"></span>ERP · Bookings</h2>
-      <p class="sub">Thursday's schedule. Sample data.</p>
+      <p class="sub">This week's schedule. Sample data.</p>
       <div class="kpis">
         <div class="kpi"><span>Bookings this week</span><b id="kWeek">41</b></div>
         <div class="kpi"><span>Booked by the agent</span><b id="kAgent">29</b></div>
@@ -55,6 +55,29 @@
     <div class="panel"><h2>Activity</h2><ul class="events" id="log"></ul><p class="empty" id="noLog">Nothing yet.</p></div>
   </div>
 </div>
+<section class="how" aria-labelledby="how-h">
+  <h2 id="how-h">How the production agent works</h2>
+  <p>The same conversation, with a language model and the business's ERP behind it.</p>
+  <div class="split">
+    <div>
+      <h3>One booking, step by step</h3>
+      <ol>
+        <li>The customer's WhatsApp message reaches the agent through a webhook.</li>
+        <li>The model works out the day and time the customer means and asks when something is missing.</li>
+        <li>Free slots are read from the ERP schedule at that moment, so the agent never offers a slot that is taken.</li>
+        <li>The booking is created in the ERP only after the customer confirms, and reminders are sent from the same record.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>What this page shows</h3>
+      <ul>
+        <li>Thursday, Friday and Saturday, each with its own free slots. A taken time is refused with the free ones listed.</li>
+        <li>Change or cancel a booking: the same ERP row updates, and a cancelled slot becomes free again.</li>
+        <li>The chat and the ERP table always show the same day and time.</li>
+      </ul>
+    </div>
+  </div>
+</section>
 </main>
 <footer class="site"><div class="wrap">
   <span>Marwan Khater, Cairo, Egypt</span>
@@ -62,52 +85,125 @@
 </div></footer>
 <script src="../../assets/chat.js"></script>
 <script>
+const { has, num, time } = DemoText;
+// Sample schedule. Free slots are what the agent can offer; taken ones are already in the ERP.
+const DAYS = {
+  thu: { ar: 'الخميس', en: 'Thursday', re: /خميس|thu/, free: ['4:00', '5:30', '7:00'] },
+  fri: { ar: 'الجمعة', en: 'Friday', re: /جمعه|fri/, free: ['1:00', '6:00'] },
+  sat: { ar: 'السبت', en: 'Saturday', re: /سبت|sat/, free: ['12:00', '3:30', '5:00'] },
+};
+const S = { day: null, pending: null, booking: null, nextRef: 2381, reminder: false, mode: 'new' };
 
-let booked = false;
+function dayIn(t) { return Object.keys(DAYS).find(k => DAYS[k].re.test(t)) || null; }
+// "5:30", "5.30", "الساعة 7", "خمسة ونص", "4 العصر" -> "H:MM" (all afternoon or evening slots)
+function timeIn(t) {
+  let m = t.match(/(\d{1,2})\s*[:.]\s*(\d{2})/);
+  if (m) return `${parseInt(m[1], 10)}:${m[2]}`;
+  m = t.match(/(?:الساعه|ساعه|على|at)\s*(\d{1,2})(?!\d)/) || t.match(/(?:^|\s)(\d{1,2})(?=\s*(?:العصر|المغرب|بالليل|الضهر|pm|$))/);
+  const half = /ونص|و نص|half/.test(t);
+  if (m) return `${parseInt(m[1], 10)}:${half ? '30' : '00'}`;
+  m = t.match(/(واحده|اتنين|تلاته|اربعه|خمسه|سته|سبعه|اتناشر)/);
+  if (m) { const n = m[1] === 'اتناشر' ? 12 : num(m[1]); return `${n}:${half ? '30' : '00'}`; }
+  return null;
+}
+const list = d => DAYS[d].free.join(' أو ');
+const listEn = d => DAYS[d].free.join(', ');
+
+function respond(raw, t) {
+  const yes = has(t, /(?:^|\s)(اه|ايوه|ايوا|تمام|اكد|موافق|ماشي|yes|ok|confirm)(?=$|\s|[.!،,؟?])/);
+  const no = has(t, /(?:^|\s)(لا|لأ|no)(?=$|\s|[.!،,؟?])/);
+
+  if (S.pending && (yes || no)) {
+    const p = S.pending; S.pending = null;
+    if (no) return [{ ar: 'تمام، مش هحجز. تحب ميعاد تاني؟', en: 'OK, not booked. Would you like another time?' }];
+    if (S.booking && S.mode === 'move') {
+      const b = S.booking;
+      DAYS[b.day].free.push(b.time); DAYS[b.day].free.sort((x, y) => parseFloat(x) - parseFloat(y));
+      DAYS[p.day].free = DAYS[p.day].free.filter(x => x !== p.time);
+      Object.assign(b, { day: p.day, time: p.time }); S.mode = 'new';
+      return [{ ar: `✅ غيّرت الحجز ${b.ref} لـ ${DAYS[b.day].ar} الساعة ${b.time}. التذكير هيتبعت على الميعاد الجديد.`, en: `Booking ${b.ref} moved to ${DAYS[b.day].en} at ${b.time}. The reminder follows the new time.`, effect: { booking: b, log: `Booking ${b.ref} moved to ${DAYS[b.day].en} ${b.time}` } }];
+    }
+    DAYS[p.day].free = DAYS[p.day].free.filter(x => x !== p.time);
+    S.booking = { ref: 'BK-' + S.nextRef++, day: p.day, time: p.time, status: 'Confirmed' }; S.reminder = false;
+    return [{ ar: `✅ حجزتلك ${DAYS[p.day].ar} الساعة ${p.time}، رقم الحجز ${S.booking.ref}.`, en: `Booked for ${DAYS[p.day].en} at ${p.time}. Your booking number is ${S.booking.ref}.`, effect: { booking: S.booking, log: `Booking ${S.booking.ref} created in the ERP from WhatsApp` } }];
+  }
+
+  if (has(t, /الغي|لغي|كنسل|cancel/)) {
+    if (!S.booking || S.booking.status === 'Cancelled') return [{ ar: 'مفيش حجز مفتوح باسمك.', en: 'You have no open booking.' }];
+    const b = S.booking; b.status = 'Cancelled'; S.day = null; S.mode = 'new';
+    DAYS[b.day].free.push(b.time); DAYS[b.day].free.sort((x, y) => parseFloat(x) - parseFloat(y));
+    return [{ ar: `لغيت الحجز ${b.ref}، والميعاد بقى متاح لغيرك.`, en: `Booking ${b.ref} cancelled; the slot is free again.`, effect: { booking: b, log: `Booking ${b.ref} cancelled` } }];
+  }
+  if (has(t, /غير|اغير|بدل|اجل|انقل|move|reschedule/) && S.booking && S.booking.status === 'Confirmed') {
+    S.mode = 'move';
+    const d = dayIn(t) || S.booking.day; S.day = d;
+    return [{ ar: `حجزك ${S.booking.ref} دلوقتي ${DAYS[S.booking.day].ar} الساعة ${S.booking.time}. المتاح ${DAYS[d].ar}: ${list(d)}. تحب أنهي؟`, en: `Booking ${S.booking.ref} is now ${DAYS[S.booking.day].en} at ${S.booking.time}. Free on ${DAYS[d].en}: ${listEn(d)}. Which one?` }];
+  }
+  if (has(t, /تذكير|فكرني|ذكرني|remind/)) {
+    if (!S.booking || S.booking.status !== 'Confirmed') return [{ ar: 'احجز الأول وبعدين أبعتلك تذكير قبلها.', en: 'Book first, then I will send a reminder before it.' }];
+    if (S.reminder) return [{ ar: 'التذكير متسجّل بالفعل، هيوصلك قبل الميعاد بساعة.', en: 'The reminder is already set for an hour before.' }];
+    S.reminder = true;
+    return [{ ar: 'أكيد، هبعتلك تذكير هنا قبل الميعاد بساعة 🔔', en: 'Sure, I will remind you here an hour before.', effect: { log: `Reminder scheduled 1 hour before ${S.booking.ref}` } }];
+  }
+  if (has(t, /قد ايه|مده|بياخد|كام دقيقه|how long|duration/)) return [{ ar: 'الميعاد بياخد حوالي 45 دقيقة.', en: 'An appointment takes about 45 minutes.' }];
+
+  const dateOnly = t.match(/(?:يوم|بتاريخ)\s*(\d{1,2})(?!\s*[:.])/);
+  const d = dayIn(t); const tm = timeIn(t);
+  if (dateOnly && !d) return [{ ar: 'الجدول اللي قدامي فيه الخميس والجمعة والسبت بس. تحب أنهي يوم فيهم؟', en: 'The schedule I can see covers Thursday, Friday and Saturday. Which day would you like?' }];
+  if (d) S.day = d;
+  if (tm) {
+    const day = S.day;
+    if (!day) { S.pendingTime = tm; return [{ ar: `الساعة ${tm} في أنهي يوم؟ عندنا الخميس والجمعة والسبت.`, en: `${tm} on which day? Thursday, Friday or Saturday.` }]; }
+    if (!DAYS[day].free.includes(tm)) return [{ ar: `الساعة ${tm} مش متاحة ${DAYS[day].ar}. المتاح: ${list(day)}.`, en: `${tm} is not available on ${DAYS[day].en}. Free: ${listEn(day)}.` }];
+    S.pending = { day, time: tm };
+    const verb = S.mode === 'move' ? 'أغيّر الحجز لـ' : 'أأكد الحجز';
+    return [{ ar: `${verb} ${DAYS[day].ar} الساعة ${tm}؟`, en: `${S.mode === 'move' ? 'Move the booking to' : 'Confirm the booking for'} ${DAYS[day].en} at ${tm}?` }];
+  }
+  if (d && S.pendingTime) { const p = S.pendingTime; S.pendingTime = null; return respond(raw, t + ' ' + p); }
+  if (d || has(t, /احجز|حجز|ميعاد|معاد|متاح|book|slot/)) {
+    if (!S.day) return [{ ar: 'تحب يوم إيه؟ عندنا مواعيد الخميس والجمعة والسبت.', en: 'Which day? There are slots on Thursday, Friday and Saturday.' }];
+    return [{ ar: `متاح ${DAYS[S.day].ar}: ${list(S.day)}. تحب أنهي ميعاد؟`, en: `Free on ${DAYS[S.day].en}: ${listEn(S.day)}. Which time?` }];
+  }
+  if (has(t, /شكرا|thanks/)) return [{ ar: 'العفو، في انتظارك 🙏', en: "You're welcome, see you then." }];
+  return [{ ar: 'مش متأكد إني فهمت. ممكن تقول اليوم والساعة، زي "الخميس 5:30"، أو تطلب تغيير أو إلغاء الحجز.', en: 'I am not sure I understood. Say a day and time, like "Thursday 5:30", or ask to change or cancel the booking.' }];
+}
+
+function chips() {
+  if (S.pending) return [{ ar: 'أيوه، أكّد', en: 'Yes, confirm' }, { ar: 'لا', en: 'No' }];
+  const active = S.booking && S.booking.status === 'Confirmed';
+  if (S.day && (!active || S.mode === 'move')) return DAYS[S.day].free.slice(0, 3).map(x => ({ ar: x, en: x }));
+  if (active) return [{ ar: 'ابعتلي تذكير قبلها', en: 'Remind me before' }, { ar: 'عايز أغيّر الميعاد', en: 'I want to change the time' }, { ar: 'الغي الحجز', en: 'Cancel the booking' }];
+  return [{ ar: 'عايز أحجز يوم الخميس بعد العصر', en: 'I want to book Thursday afternoon' }, { ar: 'الميعاد بياخد قد إيه؟', en: 'How long does it take?' }];
+}
+
 function log(text) {
   document.getElementById('noLog').hidden = true;
   const li = document.createElement('li');
-  const t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  li.innerHTML = '<span class="when">' + t + '</span>'; li.append(text);
+  li.innerHTML = '<span class="when"></span>';
+  li.querySelector('.when').textContent = time(); li.append(text); li.classList.add('flash');
   document.getElementById('log').prepend(li);
 }
-function fx(name) {
-  if (name.startsWith('book:') && !booked) {
-    booked = true;
-    const time = name.slice(5);
-    const tr = document.createElement('tr'); tr.className = 'hl';
-    tr.innerHTML = '<td>BK-2381</td><td>Thu ' + time + '</td><td>New customer</td><td>WhatsApp agent</td><td><span class="pill ok">Confirmed</span></td>';
-    document.getElementById('rows').append(tr);
-    document.getElementById('kWeek').textContent = '42'; document.getElementById('kAgent').textContent = '30';
-    log('Booking BK-2381 created in the ERP from WhatsApp');
+let counted = new Set();
+function fx(e) {
+  if (e.log) log(e.log);
+  if (!e.booking) return;
+  const b = e.booking;
+  let tr = document.getElementById(b.ref);
+  if (!tr) { tr = document.createElement('tr'); tr.id = b.ref; document.getElementById('rows').append(tr); }
+  const pill = b.status === 'Cancelled' ? 'bad' : 'ok';
+  tr.innerHTML = `<td>${b.ref}</td><td>${DAYS[b.day].en.slice(0, 3)} ${b.time}</td><td>New customer</td><td>WhatsApp agent</td><td><span class="pill ${pill}">${b.status}</span></td>`;
+  tr.classList.add('flash'); setTimeout(() => tr.classList.remove('flash'), 1200);
+  tr.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  if (!counted.has(b.ref) && b.status === 'Confirmed') {
+    counted.add(b.ref);
+    for (const id of ['kWeek', 'kAgent']) { const el = document.getElementById(id); el.textContent = String(+el.textContent + 1); }
   }
-  if (name === 'reminder') log('Reminder scheduled 1 hour before BK-2381');
 }
+
 mountChat(document.getElementById('phone'), {
   day: 'Today',
-  intro: [{ text: 'أهلاً بيك 👋 تحب تحجز ميعاد؟', delay: 700 }],
-  start: ['ask', 'duration'],
-  flows: {
-    duration: { user: 'الميعاد بياخد قد إيه؟', next: ['ask'],
-      replies: [{ text: 'حوالي 45 دقيقة.' }] },
-    ask: { user: 'عايز أحجز يوم الخميس بعد العصر', next: ['s530', 's700'],
-      replies: [{ text: 'متاح يوم الخميس: 4:00 أو 5:30 أو 7:00. تحب أنهي ميعاد؟' }] },
-    s530: { user: '5:30', next: ['reminder'],
-      replies: [{ text: 'تمام ✅ حجزتلك الخميس الساعة 5:30، رقم الحجز BK-2381.', effect: 'book:5:30' }] },
-    s700: { user: '7:00', next: ['reminder'],
-      replies: [{ text: 'تمام ✅ حجزتلك الخميس الساعة 7:00، رقم الحجز BK-2381.', effect: 'book:7:00' }] },
-    reminder: { user: 'ابعتلي تذكير قبلها', next: ['ask'],
-      replies: [{ text: 'أكيد، هبعتلك تذكير هنا قبل الميعاد بساعة 🔔', effect: 'reminder' }] },
-  },
-  keywords: [
-    { re: /5[:.]?30|خمسة ونص/, flow: 's530' },
-    { re: /7|سبعة/, flow: 's700' },
-    { re: /تذكير|فكرني|reminder/i, flow: 'reminder' },
-    { re: /قد إيه|مدة|وقت/i, flow: 'duration' },
-    { re: /احجز|أحجز|حجز|ميعاد|book/i, flow: 'ask' },
-  ],
-  fallback: 'ده ديمو ببيانات مثال، فبيفهم الحجز بس. جرّب من الاقتراحات 👇',
-  onEffect: fx,
+  intro: [{ ar: 'أهلاً بيك 👋 تحب تحجز ميعاد؟', en: 'Hi! Would you like to book an appointment?', delay: 700 }],
+  respond, chips, onEffect: fx,
 });
 </script>
 </body>
