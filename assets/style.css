@@ -68,8 +68,8 @@ img { max-width: 100%; display: block; }
 /* system panel */
 .panel { background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 14px; padding: 18px; }
 .panel + .panel { margin-top: 16px; }
-.panel h3 { margin: 0; font-size: 16.5px; font-weight: 650; display: flex; align-items: center; gap: 10px; }
-.panel h3 .live { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.panel h2 { margin: 0; font-size: 16.5px; font-weight: 650; display: flex; align-items: center; gap: 10px; }
+.panel h2 .live { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
 .panel .sub { color: var(--muted); font-size: 14px; margin: 2px 0 0; }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
 .kpi { background: var(--soft); border: 1px solid var(--rule); border-radius: 10px; padding: 11px 13px; transition: background-color .3s, border-color .3s; }
