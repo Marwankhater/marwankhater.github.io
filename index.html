@@ -48,7 +48,7 @@
   .bar nav a.cv:hover { border-color: var(--gold); }
 
   /* intro */
-  .intro { padding-block: 64px 40px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 0 40px; align-items: start; }
+  .intro { padding-block: 64px 24px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 0 40px; align-items: start; }
   .intro .face { grid-row: 1 / span 2; }
   .intro .links { grid-column: 2; }
   .face { display: block; width: 200px; height: 250px; object-fit: cover; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); background: var(--raise); }
@@ -63,11 +63,6 @@
   .btn.main:hover { background: var(--gold-hi); border-color: var(--gold-hi); }
   .btn svg { width: 17px; height: 17px; flex: none; }
 
-  /* highlights */
-  .facts { list-style: none; margin: 0; padding: 22px 0; border-block: 1px solid var(--rule); display: grid; grid-template-columns: 200px repeat(3, minmax(0, 1fr)); gap: 16px 40px; }
-  .facts li:first-child { grid-column: 2; }
-  .facts b { display: block; font-size: 30px; line-height: 1.1; font-weight: 750; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-  .facts span { display: block; margin-top: 4px; font-size: 14.5px; color: var(--muted); line-height: 1.4; }
 
   /* sections */
   .sec { padding: 72px 0 0; }
@@ -136,7 +131,6 @@
 
   @media (max-width: 860px) {
     .sec > .wrap, .contact .wrap { grid-template-columns: 150px minmax(0, 1fr); gap: 28px; }
-    .facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } .facts li:first-child { grid-column: auto; }
     .intro { grid-template-columns: 160px minmax(0, 1fr); gap: 0 28px; padding-block: 48px 36px; }
     .intro .face { grid-row: 1; width: 160px; height: 200px; border-radius: 14px; }
     .intro .links { grid-column: 1 / -1; }
@@ -149,7 +143,6 @@
     .bar nav a.hide-s { display: none; }
     .intro { grid-template-columns: 1fr; gap: 20px; padding-block: 32px 32px; }
     .intro .face { width: 120px; height: 150px; border-radius: 12px; }
-    .facts b { font-size: 25px; } .facts span { font-size: 13.5px; }
     .summary { font-size: 17px; }
     .links .btn { flex: 1 1 140px; }
     .links .btn.main { flex-basis: 100%; }
@@ -162,7 +155,6 @@
   }
   @media (max-width: 380px) {
     .bar nav a.hide-xs { display: none; }
-    .facts { grid-template-columns: 1fr 1fr; } 
   }
   @media print {
     :root { --bg: #fff; --raise: #fff; --ink: #111C27; --body: #2E3D4A; --muted: #5B6873; --rule: #DDE3E8; --gold: #7A5A1E; color-scheme: light; }
@@ -194,14 +186,6 @@
         <a class="btn" href="assets/Marwan_Khater_CV.pdf" target="_blank" rel="noopener">View CV</a>
       </div>
   </section>
-
-  <div class="wrap">
-    <ul class="facts" aria-label="Highlights">
-      <li><b>8</b><span>ERP systems delivered end to end</span></li>
-      <li><b>32</b><span>custom Odoo modules</span></li>
-      <li><b>6,500+</b><span>automated tests</span></li>
-    </ul>
-  </div>
 
   <section class="sec" id="about" aria-labelledby="h-about"><div class="wrap">
     <h2 id="h-about">What I do</h2>
